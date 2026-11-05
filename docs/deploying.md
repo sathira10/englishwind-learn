@@ -21,8 +21,10 @@ Each has its own D1 database, R2 bucket, secrets and Access policy.
 4. For the nightly backup ([operations.md](operations.md)), add these repository secrets as well:
    `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 API token with read access to both
    buckets, made in the Cloudflare dashboard under R2, Manage API tokens) and `BACKUP_PASSPHRASE`
-   (a long random passphrase, also kept in a password manager). `CLOUDFLARE_API_TOKEN` needs D1
-   read access for the export.
+   (a random passphrase of 32 or more characters). GitHub secrets cannot be read back, so keep a
+   copy of every backup secret in a password manager. `CLOUDFLARE_API_TOKEN` needs the same D1
+   permission as deploying (D1 Edit); I could not confirm from wrangler that an export works
+   with read-only access, so do not narrow it without testing.
 
 ## Deploy
 
