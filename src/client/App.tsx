@@ -1,9 +1,24 @@
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router";
+
+// Dev-only specimen page. The condition is a build-time constant, so production builds drop both
+// the route and the import.
+const ComponentsPage = import.meta.env.DEV ? lazy(() => import("./dev/ComponentsPage")) : null;
 
 // Placeholder shell. Screens arrive with their slices (plans/roadmap.md).
 export function App() {
   return (
     <Routes>
+      {ComponentsPage ? (
+        <Route
+          path="/dev/components"
+          element={
+            <Suspense fallback={null}>
+              <ComponentsPage />
+            </Suspense>
+          }
+        />
+      ) : null}
       <Route path="*" element={<Home />} />
     </Routes>
   );
