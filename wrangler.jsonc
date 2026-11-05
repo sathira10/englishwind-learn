@@ -15,6 +15,10 @@
     "run_worker_first": ["/api/*"],
   },
   "observability": { "enabled": true },
+  // Public settings only. BETTER_AUTH_SECRET and the optional GOOGLE_CLIENT_ID and
+  // GOOGLE_CLIENT_SECRET are secrets: .dev.vars locally, `wrangler secret put` elsewhere.
+  "vars": { "BETTER_AUTH_URL": "http://localhost:5173", "MAIL_DRIVER": "console" },
+  "secrets": { "required": ["BETTER_AUTH_SECRET"] },
   "d1_databases": [
     {
       "binding": "DB",
@@ -27,7 +31,9 @@
   "env": {
     "staging": {
       "name": "englishwind-learn-staging",
-      // FILL: route for the staging host.
+      // FILL: route for the staging host, and BETTER_AUTH_URL below to match.
+      "vars": { "BETTER_AUTH_URL": "https://FILL-staging-host", "MAIL_DRIVER": "cloudflare" },
+      "secrets": { "required": ["BETTER_AUTH_SECRET"] },
       "d1_databases": [
         {
           "binding": "DB",
@@ -41,6 +47,8 @@
     "production": {
       "name": "englishwind-learn",
       // FILL: "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }]
+      "vars": { "BETTER_AUTH_URL": "https://learn.englishwind.lk", "MAIL_DRIVER": "cloudflare" },
+      "secrets": { "required": ["BETTER_AUTH_SECRET"] },
       "d1_databases": [
         {
           "binding": "DB",
