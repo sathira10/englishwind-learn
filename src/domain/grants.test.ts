@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { accessEnd, extend, revoke } from "./grants";
+import { accessEnd, effectiveEnd, extend, revoke } from "./grants";
+
+describe("effectiveEnd", () => {
+  it("is endsAt when not revoked", () => {
+    expect(effectiveEnd({ startsAt: 0, endsAt: 100, revokedAt: null })).toBe(100);
+  });
+  it("is the revocation when it comes before the end (a future revocation)", () => {
+    expect(effectiveEnd({ startsAt: 0, endsAt: 100, revokedAt: 60 })).toBe(60);
+  });
+  it("is endsAt when the revocation is after it", () => {
+    expect(effectiveEnd({ startsAt: 0, endsAt: 100, revokedAt: 150 })).toBe(100);
+  });
+});
 
 const MAX_DATE = 8_640_000_000_000_000;
 const g = { startsAt: 0, endsAt: 1_000, revokedAt: null };

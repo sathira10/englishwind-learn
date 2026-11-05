@@ -45,5 +45,11 @@ export type ProgressResponse = z.infer<typeof progressResponse>;
 
 /** Every error body. `no_access` is the answer for a missing, expired or revoked grant. */
 export const apiError = z.strictObject({
-  error: z.enum(["unauthorized", "no_access", "not_found"]),
+  error: z.enum([
+    "unauthorized",
+    "email_not_verified",
+    "account_conflict",
+    "no_access",
+    "not_found",
+  ]),
 });

@@ -23,6 +23,11 @@ schemas in `src/shared/access.ts`, strict, with no field for an R2 key.
 | `POST /courses/:courseId/lessons/:key/visit`    | `{ progress }`; upsert `lastVisitedAt`, never clears `completedAt`          |
 | `GET /worksheets/:resourceId`                   | The PDF bytes streamed from private R2                                      |
 
+`GET /courses` lists only courses that have a publication, titled from the latest one.
+`accessEndsAt` is `effectiveEnd` (plan 02 module): the latest `min(endsAt, revokedAt)` among
+current grants. A worksheet is served only if the latest publication still lists its id (else
+404). Course and lesson responses, errors included, carry `Cache-Control: private, no-store`.
+
 Times are epoch milliseconds (UTC). Worksheet headers: `Content-Type` from `resources`,
 `Content-Disposition: attachment; filename="<label>.pdf"` (from the label, never the key),
 `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`.

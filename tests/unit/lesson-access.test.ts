@@ -92,6 +92,14 @@ function grant(
 
 const current = () => ({ startsAt: Date.now() - DAY, endsAt: Date.now() + 365 * DAY });
 
+function publish(def: typeof blueprint, offset: number) {
+  return env.DB.batch(
+    publishStatements(def, { now: Date.now() + offset, publishedBy: "test" }).map((q) =>
+      env.DB.prepare(q),
+    ),
+  );
+}
+
 const WORKSHEET = "blueprint-lesson-03";
 
 beforeAll(async () => {
@@ -198,9 +206,9 @@ describe("grants that do not count", () => {
       expect(res.status, `${method} ${path}`).toBe(403);
       await expectNothing(res);
     }
-    // It does list the course they do have.
+    // "other" has no publication, so it is not listed either.
     const list = myCoursesResponse.parse(await (await api("/courses")).json());
-    expect(list.courses.map((c) => c.courseId)).toEqual(["other"]);
+    expect(list.courses).toEqual([]);
   });
 
   it("another student's grant does not help", async () => {
@@ -213,13 +221,37 @@ describe("grants that do not count", () => {
 });
 
 describe("a student with a current grant", () => {
+  it("reports a future revocation as the end of access, and still allows access until then", async () => {
+    const { api, studentId } = await newStudent();
+    const period = current();
+    const revokedAt = Date.now() + 10 * DAY;
+    await grant(studentId, "blueprint", { ...period, revokedAt });
+    const list = myCoursesResponse.parse(await (await api("/courses")).json());
+    expect(list.courses[0]?.accessEndsAt).toBe(revokedAt);
+    const body = courseResponse.parse(await (await api("/courses/blueprint")).json());
+    expect(body.accessEndsAt).toBe(revokedAt);
+  });
+
+  it("sends Cache-Control: private, no-store on course and lesson JSON", async () => {
+    const { api, studentId } = await newStudent();
+    await grant(studentId, "blueprint", current());
+    for (const path of ["/courses", "/courses/blueprint", "/courses/blueprint/lessons/03"]) {
+      const res = await api(path);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control"), path).toBe("private, no-store");
+    }
+    expect((await api("/courses/blueprint/lessons/99")).headers.get("cache-control")).toBe(
+      "private, no-store",
+    );
+  });
+
   it("lists their course with the grant end date", async () => {
     const { api, studentId } = await newStudent();
     const period = current();
     await grant(studentId, "blueprint", period);
     const list = myCoursesResponse.parse(await (await api("/courses")).json());
     expect(list.courses).toEqual([
-      { courseId: "blueprint", title: "Blueprint", accessEndsAt: period.endsAt },
+      { courseId: "blueprint", title: "EnglishWind Blueprint", accessEndsAt: period.endsAt },
     ]);
   });
 
@@ -310,17 +342,29 @@ describe("a student with a current grant", () => {
     expect(await res.json()).toEqual({ error: "not_found" });
   });
 
-  it("uses the latest publication", async () => {
+  it("uses the latest publication for the list title too", async () => {
     const { api, studentId } = await newStudent();
     await grant(studentId, "blueprint", current());
     const edited = structuredClone(blueprint);
     edited.title = "Blueprint, second edition";
-    await env.DB.batch(
-      publishStatements(edited, { now: Date.now() + 1, publishedBy: "test" }).map((s) =>
-        env.DB.prepare(s),
-      ),
-    );
+    await publish(edited, 1);
     const body = courseResponse.parse(await (await api("/courses/blueprint")).json());
     expect(body.course.title).toBe("Blueprint, second edition");
+    const list = myCoursesResponse.parse(await (await api("/courses")).json());
+    expect(list.courses[0]?.title).toBe("Blueprint, second edition");
+  });
+
+  it("serves no worksheet that a later publication dropped", async () => {
+    const { api, studentId } = await newStudent();
+    await grant(studentId, "blueprint", current());
+    expect((await api(`/worksheets/${WORKSHEET}`)).status).toBe(200);
+    const dropped = structuredClone(blueprint);
+    for (const m of dropped.modules) {
+      for (const l of m.lessons) if (l.key === "03") l.worksheets = [];
+    }
+    await publish(dropped, 2);
+    const res = await api(`/worksheets/${WORKSHEET}`);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
   });
 });

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { hasAccess } from "../../domain/grants";
 import { grants, resources } from "../../db/schema";
+import { latestCourse } from "./courses";
 import { requireStudent, type AppEnv } from "../auth/require-student";
 
 // Plan 05. Worksheets come only from the private R2 bucket, streamed by this Worker after a
@@ -36,6 +37,13 @@ export const worksheets = new Hono<AppEnv>().get("/:resourceId", requireStudent,
       and(eq(grants.studentId, c.var.student.studentId), eq(grants.courseId, resource.courseId)),
     );
   if (!hasAccess(list, Date.now())) return c.json({ error: "no_access" }, 403);
+
+  // Only worksheets the latest publication still lists. A dropped one is gone, grant or not.
+  const course = await latestCourse(db, resource.courseId);
+  const listed = course?.modules.some((m) =>
+    m.lessons.some((l) => l.worksheets.some((w) => w.id === resource.id)),
+  );
+  if (!listed) return c.json({ error: "not_found" }, 404);
 
   const object = await c.env.FILES.get(resource.r2Key);
   if (!object) return c.json({ error: "not_found" }, 404);

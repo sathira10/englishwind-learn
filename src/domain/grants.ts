@@ -61,6 +61,14 @@ export function isCurrent(grant: Grant, now: number): boolean {
   return grant.startsAt <= now && now < grant.endsAt;
 }
 
+/**
+ * The instant access really stops: `endsAt`, or the revocation if that came first. A revoked
+ * grant that was meant to run longer therefore reports the revocation time.
+ */
+export function effectiveEnd(grant: Grant): number {
+  return grant.revokedAt === null ? grant.endsAt : Math.min(grant.endsAt, grant.revokedAt);
+}
+
 /** True when any of the grants is current at `now`. */
 export function hasAccess(grants: readonly Grant[], now: number): boolean {
   return grants.some((g) => isCurrent(g, now));

@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { hasAccess, isCurrent, type Grant } from "../../domain/grants";
+import { effectiveEnd, hasAccess, isCurrent, type Grant } from "../../domain/grants";
 import { lessonView } from "../../domain/course";
 import { courseId as courseIdSchema, publishedCourse } from "../../shared/course";
 import type {
@@ -34,7 +34,13 @@ function grantsFor(db: Db, studentId: string, courseId: string): Promise<Grant[]
     .where(and(eq(grants.studentId, studentId), eq(grants.courseId, courseId)));
 }
 
-export const courseRoutes = new Hono<AppEnv>().use(requireStudent);
+export const courseRoutes = new Hono<AppEnv>()
+  // Course data is per student and per moment: never cached, errors included.
+  .use(async (c, next) => {
+    await next();
+    c.header("Cache-Control", "private, no-store");
+  })
+  .use(requireStudent);
 
 courseRoutes.get("/", async (c) => {
   const db = drizzle(c.env.DB);
@@ -42,23 +48,24 @@ courseRoutes.get("/", async (c) => {
   const rows = await db
     .select({
       courseId: grants.courseId,
-      title: courses.title,
       startsAt: grants.startsAt,
       endsAt: grants.endsAt,
       revokedAt: grants.revokedAt,
     })
     .from(grants)
-    .innerJoin(courses, eq(courses.id, grants.courseId))
     .where(eq(grants.studentId, c.var.student.studentId));
-  const byCourse = new Map<string, MyCourse>();
+  const ends = new Map<string, number>();
   for (const r of rows) {
-    if (!isCurrent(r, now)) continue;
-    const seen = byCourse.get(r.courseId);
-    if (!seen || r.endsAt > seen.accessEndsAt) {
-      byCourse.set(r.courseId, { courseId: r.courseId, title: r.title, accessEndsAt: r.endsAt });
-    }
+    if (isCurrent(r, now))
+      ends.set(r.courseId, Math.max(ends.get(r.courseId) ?? 0, effectiveEnd(r)));
   }
-  return c.json({ courses: [...byCourse.values()] });
+  const list: MyCourse[] = [];
+  for (const [courseId, accessEndsAt] of ends) {
+    // No publication yet means nothing to show. The title is the published one.
+    const course = await latestCourse(db, courseId);
+    if (course) list.push({ courseId, title: course.title, accessEndsAt });
+  }
+  return c.json({ courses: list });
 });
 
 type Denied = { error: "not_found" | "no_access" };
@@ -79,11 +86,11 @@ async function authorize(env: Env, studentId: string, courseId: string) {
   const now = Date.now();
   const list = await grantsFor(db, studentId, courseId);
   if (!hasAccess(list, now)) return { error: "no_access" } as Denied;
-  const endsAt = Math.max(...list.filter((g) => isCurrent(g, now)).map((g) => g.endsAt));
+  const endsAt = Math.max(...list.filter((g) => isCurrent(g, now)).map(effectiveEnd));
   return { db, now, endsAt, studentId, courseId };
 }
 
-async function latestCourse(db: Db, courseId: string) {
+export async function latestCourse(db: Db, courseId: string) {
   const row = await db
     .select({ contentJson: coursePublications.contentJson })
     .from(coursePublications)
