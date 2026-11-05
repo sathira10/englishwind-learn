@@ -1,0 +1,3 @@
+#!/bin/sh
+# Refuses changes to tests/reference/ without Sathira's approval trailer (docs/adr/0006).
+exec node scripts/check-reference.mjs --commit-msg "$1"
