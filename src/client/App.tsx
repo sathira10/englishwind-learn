@@ -5,6 +5,7 @@ import { LessonPage } from "./screens/LessonPage";
 import { MyCourses } from "./screens/MyCourses";
 import { NotFoundScreen, Shell } from "./screens/Shell";
 import { SignIn } from "./screens/SignIn";
+import OrderPage from "./OrderPage";
 
 // Dev-only specimen page. The condition is a build-time constant, so production builds drop both
 // the route and the import.
@@ -15,6 +16,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/admin/*" element={<Admin />} />
+      <Route path="/order/:offer" element={<OrderPage />} />
       {ComponentsPage ? (
         <Route
           path="/dev/components"

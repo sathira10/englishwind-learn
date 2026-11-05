@@ -84,7 +84,7 @@ Not built in this step (fast-check arrives with slice 02).
 
 1. **Pure rules.** `src/domain/orders.ts` with the types, reference helpers, pricing, `approve`,
    `reject`, `grantStartFor`, `formatLkr`, and the tests above. Done when `pnpm check` passes.
-2. **D1 write path (later).** Approve = one `batch()` of a conditional
+2. **D1 write path (done in slice 13: `src/worker/orders/repo.ts`).** Approve = one `batch()` of a conditional
    `UPDATE orders SET status='approved', decided_at=?, decided_by=? WHERE id=? AND status='pending'`
    plus `INSERT` of the grant (start from `grantStartFor`) and an `audit_log` row. The
    `UNIQUE(order_id)` on `grants` makes a double submit fail instead of making a second grant;
