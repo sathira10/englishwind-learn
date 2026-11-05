@@ -78,6 +78,38 @@ describe("POST /api/orders sends orderReceived", () => {
     }
   });
 
+  it("sends in the background when the request has an execution context", async () => {
+    const mailer = captureMailer();
+    const pending: Promise<unknown>[] = [];
+    const ctx = {
+      waitUntil: (p: Promise<unknown>) => void pending.push(p),
+      passThroughOnException: () => {},
+    } as unknown as ExecutionContext;
+    const email = freshEmail();
+    const res = await createApp({ mailer }).fetch(
+      new Request(`${ORIGIN}/api/orders`, {
+        method: "POST",
+        body: JSON.stringify({
+          offer: "blueprint",
+          name: "Kasun Perera",
+          email,
+          phone: "+94 77 123 4567",
+        }),
+        headers: {
+          origin: ORIGIN,
+          "content-type": "application/json",
+          "cf-connecting-ip": freshIp(),
+        },
+      }),
+      env,
+      ctx,
+    );
+    expect(res.status).toBe(201);
+    expect(pending).toHaveLength(1);
+    await Promise.all(pending);
+    expect(mailer.orderReceived_.map((m) => m.to)).toEqual([email]);
+  });
+
   it("sends nothing for an order that is refused", async () => {
     const mailer = captureMailer();
     const res = await createApp({ mailer }).fetch(
@@ -185,6 +217,16 @@ describe("notifyAccessGranted", () => {
       "failed",
     );
     expect(lines).toEqual(["[mail] accessGranted failed (Error)"]);
+  });
+
+  it("skips an order whose grant was revoked", async () => {
+    const { id } = await approvedOrder();
+    await env.DB.prepare("UPDATE grants SET revoked_at = ? WHERE order_id = ?")
+      .bind(Date.now(), id)
+      .run();
+    const mailer = captureMailer();
+    expect(await notifyAccessGranted(env, mailer, id)).toBe("skipped");
+    expect(mailer.accessGranted_).toEqual([]);
   });
 });
 

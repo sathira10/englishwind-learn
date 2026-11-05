@@ -61,7 +61,7 @@ export async function notifyAccessGranted(
        FROM grants g
        JOIN students s ON s.id = g.student_id
        JOIN courses c ON c.id = g.course_id
-       WHERE g.order_id = ?`,
+       WHERE g.order_id = ? AND g.revoked_at IS NULL`,
     )
       .bind(orderId)
       .first<GrantedRow>();
