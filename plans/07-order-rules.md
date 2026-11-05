@@ -1,6 +1,6 @@
 # Plan 07: Bank-transfer order rules
 
-6 November 2026. Baseline: `claude/slice-00-launch-roadmap`.
+5 November 2026. Baseline: `claude/slice-00-launch-roadmap`.
 
 After this slice the order rules are written down and tested as pure functions: how a reference is
 made, what an order costs, and what approving or rejecting does, so the later order API and admin

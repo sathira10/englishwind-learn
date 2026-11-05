@@ -48,13 +48,18 @@ export function generateReferenceFrom(getBytes: (count: number) => Uint8Array): 
   let code = "";
   while (code.length < REFERENCE_LENGTH) {
     const bytes = getBytes(REFERENCE_LENGTH - code.length);
+    if (bytes.length === 0) throw new RangeError("random source returned no bytes");
     for (const byte of bytes) {
-      if (byte < ACCEPT_BELOW && code.length < REFERENCE_LENGTH) {
-        code += REFERENCE_ALPHABET[byte % REFERENCE_ALPHABET.length];
-      }
+      const char = referenceCharFor(byte);
+      if (char !== null && code.length < REFERENCE_LENGTH) code += char;
     }
   }
   return REFERENCE_PREFIX + code;
+}
+
+/** The character one random byte stands for, or null when the byte is discarded. */
+export function referenceCharFor(byte: number): string | null {
+  return byte < ACCEPT_BELOW ? REFERENCE_ALPHABET[byte % REFERENCE_ALPHABET.length]! : null;
 }
 
 /** Build a reference from a fixed byte buffer. Throws if the buffer runs out. */
@@ -80,7 +85,7 @@ export function isValidReference(s: string): boolean {
  */
 export function normalizeReference(s: string): string {
   const upper = s.trim().toUpperCase();
-  const match = /^EW[\s-]*(\S+)$/.exec(upper);
+  const match = /^EW[\s\-\u2010-\u2015]*(\S+)$/.exec(upper);
   return match ? REFERENCE_PREFIX + match[1] : upper;
 }
 

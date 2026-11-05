@@ -7,6 +7,7 @@ import {
   grantStartFor,
   isValidReference,
   normalizeReference,
+  referenceCharFor,
   priceOrder,
   type Order,
 } from "../../src/domain/orders";
@@ -35,21 +36,21 @@ describe("generateReference", () => {
     expect(() => generateReference(Uint8Array.from([255, 255, 255]))).toThrow();
   });
 
-  it("is uniform over a deterministic source covering every accepted byte equally", () => {
+  it("maps every byte value to each character exactly equally, discarding the rest", () => {
     const counts = new Map<string, number>();
-    let next = 0;
-    for (let i = 0; i < 248 * 4; i++) {
-      const ref = generateReferenceFrom((n) => {
-        const out = new Uint8Array(n);
-        for (let j = 0; j < n; j++) out[j] = next++ % 256;
-        return out;
-      });
-      counts.set(ref[3]!, (counts.get(ref[3]!) ?? 0) + 1);
+    let discarded = 0;
+    for (let byte = 0; byte < 256; byte++) {
+      const char = referenceCharFor(byte);
+      if (char === null) discarded++;
+      else counts.set(char, (counts.get(char) ?? 0) + 1);
     }
     expect(counts.size).toBe(REFERENCE_ALPHABET.length);
-    const values = [...counts.values()];
-    // Every character is hit about equally often; no character is favoured by a byte wrap.
-    expect(Math.max(...values) - Math.min(...values)).toBeLessThanOrEqual(8);
+    expect(new Set(counts.values())).toEqual(new Set([8]));
+    expect(discarded).toBe(256 - 8 * REFERENCE_ALPHABET.length);
+  });
+
+  it("refuses a random source that returns no bytes", () => {
+    expect(() => generateReferenceFrom(() => new Uint8Array(0))).toThrow(RangeError);
   });
 
   it("works with crypto.getRandomValues and only uses the alphabet", () => {
@@ -65,6 +66,7 @@ describe("normalizeReference / isValidReference", () => {
     expect(normalizeReference("  ew-7kq4xm ")).toBe("EW-7KQ4XM");
     expect(normalizeReference("EW 7KQ4XM")).toBe("EW-7KQ4XM");
     expect(normalizeReference("EW-7KQ4XM")).toBe("EW-7KQ4XM");
+    expect(normalizeReference("EW\u20137KQ4XM")).toBe("EW-7KQ4XM");
   });
 
   it("rejects wrong length, look-alikes and other prefixes", () => {
