@@ -41,11 +41,16 @@ if (args[0] === "--commit-msg") {
     }
   }
   if (!range.length) {
-    const dirty = guarded(
-      lines(git("status", "--porcelain", "--untracked-files=all", "--", DIR)).map((line) =>
-        line.slice(3),
-      ),
-    );
+    // Plain path lists, not `git status` columns: the leading space of an unstaged change would
+    // be lost to trim() and cut the path short.
+    const dirty = guarded([
+      ...new Set([
+        ...lines(git("diff", "--cached", "--name-only", "--", DIR)),
+        ...lines(
+          git("ls-files", "--modified", "--deleted", "--others", "--exclude-standard", "--", DIR),
+        ),
+      ]),
+    ]);
     if (dirty.length) failures.push(`uncommitted changes to ${dirty.join(", ")}`);
   }
 }
