@@ -8,6 +8,13 @@
       "when": 1793896061118,
       "tag": "0000_opposite_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793896212190,
+      "tag": "0001_seed_blueprint",
+      "breakpoints": true
     }
   ]
 }

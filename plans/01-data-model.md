@@ -83,7 +83,6 @@ the staff seed (Q4, slice 08), and the 5 existing buyers (slice 12).
   with history cannot be hard-deleted by accident.
 - Seed `created_at` is fixed at 2026-11-05T00:00:00Z (1793836800000) so the migration is
   deterministic.
-- drizzle-kit does not know about the hand-written `0001_seed_blueprint.sql` (it is not in
-  `meta/_journal.json`). The next generated migration will also be named `0001_...`, which would
-  sort ambiguously. Rename it to `0002_...` (and fix its tag in `_journal.json`) when generating
-  it. Slice 03 is the first to hit this.
+- The seed is a drizzle custom migration (`drizzle-kit generate --custom --name=seed_blueprint`),
+  so it is in `meta/_journal.json` and the next generated migration is numbered `0002_`. Write
+  later hand-written SQL the same way.
