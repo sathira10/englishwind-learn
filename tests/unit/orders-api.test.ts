@@ -90,6 +90,13 @@ describe("POST /api/orders", () => {
     expect(row?.c).toBe(0);
   });
 
+  it("does not charge a buyer's email quota for an unknown offer", async () => {
+    const email = freshEmail();
+    for (let i = 0; i < 6; i++)
+      expect((await post(valid({ offer: "nope", email }))).status).toBe(404);
+    expect((await post(valid({ email }))).status).toBe(201);
+  });
+
   it("answers 422 naming each bad field (R3)", async () => {
     const res = await post(valid({ email: "not-an-email", name: "  " }));
     expect(res.status).toBe(422);

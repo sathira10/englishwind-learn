@@ -43,6 +43,13 @@ export const orders = new Hono<OrderEnv>().post("/", async (c) => {
   }
   const body = parsed.data;
 
+  // Check the offer before charging the per-email quota, so requests that cannot create an
+  // order cannot lock a buyer's address out.
+  const offer = await c.env.DB.prepare("SELECT label FROM offers WHERE id = ? AND active = 1")
+    .bind(body.offer)
+    .first<{ label: string }>();
+  if (!offer) return c.json(error("offer_not_found"), 404);
+
   if (
     !(await consumeLimit(c.env.DB, `order-email:${await sha256Hex(body.email)}`, ORDER_EMAIL_LIMIT))
   ) {
@@ -57,14 +64,11 @@ export const orders = new Hono<OrderEnv>().post("/", async (c) => {
   });
   if (!created.ok) return c.json(error("offer_not_found"), 404);
 
-  const offer = await c.env.DB.prepare("SELECT label FROM offers WHERE id = ?")
-    .bind(body.offer)
-    .first<{ label: string }>();
   return c.json(
     {
       reference: created.value.order.reference,
       amountCents: created.value.order.amountCents,
-      label: offer?.label ?? body.offer,
+      label: offer.label,
       bank: BANK_DETAILS,
     } satisfies OrderResponse,
     201,
