@@ -98,6 +98,19 @@ export function revoke(grant: Grant, now: number): Grant {
   return { ...grant, revokedAt: now };
 }
 
+export type GrantState = "current" | "upcoming" | "ended" | "revoked";
+
+/**
+ * A word for a grant at `now`, for admin screens. Revoked wins once the revocation has taken
+ * effect; otherwise it is upcoming before the start, ended from the end instant, else current.
+ */
+export function grantState(grant: Grant, now: number): GrantState {
+  if (grant.revokedAt !== null && now >= grant.revokedAt) return "revoked";
+  if (now < grant.startsAt) return "upcoming";
+  if (now >= grant.endsAt) return "ended";
+  return "current";
+}
+
 /** The Asia/Colombo calendar date of an instant, as `YYYY-MM-DD`. For display and tests. */
 export function colomboDate(instant: number): string {
   return new Date(instant + COLOMBO_OFFSET_MS).toISOString().slice(0, 10);
