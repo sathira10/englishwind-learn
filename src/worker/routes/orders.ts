@@ -6,6 +6,8 @@ import {
   type OrderErrorResponse,
   type OrderResponse,
 } from "../../shared/orders";
+import type { AppEnv } from "../auth/require-student";
+import { sendSafely } from "../mail/notify";
 import { createPendingOrder } from "../orders/repo";
 import { consumeLimit, sha256Hex } from "../rate-limit";
 
@@ -14,7 +16,7 @@ import { consumeLimit, sha256Hex } from "../rate-limit";
 export const ORDER_IP_LIMIT = { window: 60 * 60, max: 10 } as const;
 export const ORDER_EMAIL_LIMIT = { window: 60 * 60, max: 5 } as const;
 
-type OrderEnv = { Bindings: Env };
+type OrderEnv = AppEnv;
 
 const error = (code: string, fields?: Record<string, string>): OrderErrorResponse =>
   fields ? { error: code, fields } : { error: code };
@@ -64,10 +66,24 @@ export const orders = new Hono<OrderEnv>().post("/", async (c) => {
   });
   if (!created.ok) return c.json(error("offer_not_found"), 404);
 
+  // The email goes after the response. A failed send is logged without the address and never
+  // fails the order: the buyer sees the same details on the page.
+  const { mailer, waitUntil } = c.var;
+  const order = created.value.order;
+  await sendSafely(waitUntil, "orderReceived", () =>
+    mailer.orderReceived(body.email, {
+      name: body.name,
+      reference: order.reference,
+      label: offer.label,
+      amountCents: order.amountCents,
+      bank: BANK_DETAILS,
+    }),
+  );
+
   return c.json(
     {
-      reference: created.value.order.reference,
-      amountCents: created.value.order.amountCents,
+      reference: order.reference,
+      amountCents: order.amountCents,
       label: offer.label,
       bank: BANK_DETAILS,
     } satisfies OrderResponse,
