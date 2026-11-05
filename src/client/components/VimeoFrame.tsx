@@ -41,6 +41,7 @@ function Frame({ videoId, title, fallback, unavailable = false }: VimeoFrameProp
           className="absolute inset-0 h-full w-full border-0"
           allow="fullscreen; picture-in-picture"
           allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
           loading="lazy"
           onError={() => setFailed(true)}
         />

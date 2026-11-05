@@ -28,7 +28,9 @@ export function TextField({
   const fieldId = id ?? autoId;
   const hintId = `${fieldId}-hint`;
   const errorId = `${fieldId}-error`;
-  const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;
+  const describedBy =
+    [rest["aria-describedby"], hint && hintId, error && errorId].filter(Boolean).join(" ") ||
+    undefined;
 
   return (
     <div className="grid gap-2">
@@ -50,7 +52,7 @@ export function TextField({
         aria-invalid={error ? true : undefined}
       />
       {error ? (
-        <p id={errorId} className="ew-notice">
+        <p id={errorId} className="ew-notice" role="alert">
           {error}
         </p>
       ) : null}

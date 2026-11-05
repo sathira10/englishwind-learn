@@ -71,6 +71,13 @@ export function ConfirmDialog({
           first.focus();
         }
       }}
+      onClose={() => {
+        // The browser closed the dialog while `open` is still true (Chrome's second Esc skips
+        // `cancel`). Keep the state honest: tell the caller, or reopen while work is running.
+        if (!open) return;
+        if (busy) ref.current?.showModal();
+        else onClose();
+      }}
       onCancel={(event) => {
         // Keep the dialog open until the caller sets `open` to false, so state never disagrees.
         event.preventDefault();

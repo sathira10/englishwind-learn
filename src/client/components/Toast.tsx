@@ -21,7 +21,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext value={api}>
       {children}
-      <div className="app-toast-region" role="status" aria-live="polite">
+      <div className="app-toast-region" role="status" aria-live="polite" aria-atomic="false">
         {state.items.map((item) => (
           <ToastView key={item.id} item={item} onDismiss={dismiss} />
         ))}
