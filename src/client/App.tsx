@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
+import OrderPage from "./OrderPage";
 
 // Dev-only specimen page. The condition is a build-time constant, so production builds drop both
 // the route and the import.
@@ -10,6 +11,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/admin/*" element={<Admin />} />
+      <Route path="/order/:offer" element={<OrderPage />} />
       {ComponentsPage ? (
         <Route
           path="/dev/components"
