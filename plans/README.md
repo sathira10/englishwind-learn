@@ -15,6 +15,7 @@ start a slice from its plan file, not from what they remember.
 | [05-lesson-access.md](05-lesson-access.md)         | Built: grant check on lesson and worksheet routes       |
 | [07-order-rules.md](07-order-rules.md)             | Active: order rules; steps 1 and 2 built                |
 | [08-admin-access.md](08-admin-access.md)           | In review: Access JWT verified, role from `staff_roles` |
+| [09-admin-screens.md](09-admin-screens.md)         | Active: admin API and screens for Amma                  |
 | [13-order-form.md](13-order-form.md)               | Active: order form, order API, orders in D1             |
 | [11-backups.md](11-backups.md)                     | Active: daily backup outside Cloudflare, restore        |
 | [12-buyer-import.md](12-buyer-import.md)           | Active: import the 5 existing buyers from a CSV         |

@@ -73,6 +73,11 @@ export interface CreateDeps {
   now?: number;
   /** Draws a reference. Tests inject a fixed sequence to force a collision. */
   newReference?: () => string;
+  /**
+   * Staff entered this order by hand (plan 09). The insert and its `order.create_manual` audit
+   * row then go in one batch.
+   */
+  manualBy?: string;
 }
 
 const MAX_REFERENCE_TRIES = 5;
@@ -128,7 +133,7 @@ export async function createPendingOrder(
     const id = crypto.randomUUID();
     const reference = draw();
     try {
-      await db
+      const insert = db
         .prepare(
           `INSERT INTO orders
              (id, reference, student_id, buyer_email, buyer_name, buyer_phone, offer_id,
@@ -136,8 +141,32 @@ export async function createPendingOrder(
            VALUES (?1, ?2, (SELECT id FROM students WHERE email = ?3), ?3, ?4, ?5, ?6, ?7,
                    'bank_transfer', 'pending', ?8)`,
         )
-        .bind(id, reference, email, input.name, input.phone, offer.id, price.value.amountCents, now)
-        .run();
+        .bind(
+          id,
+          reference,
+          email,
+          input.name,
+          input.phone,
+          offer.id,
+          price.value.amountCents,
+          now,
+        );
+      if (deps.manualBy === undefined) {
+        await insert.run();
+      } else {
+        await db.batch([
+          insert,
+          auditStatement(
+            db,
+            deps.manualBy,
+            "order.create_manual",
+            "order",
+            id,
+            { offerId: offer.id, amountCents: price.value.amountCents },
+            { at: now },
+          ),
+        ]);
+      }
     } catch (error) {
       if (isReferenceCollision(error)) continue;
       throw error;
@@ -212,7 +241,7 @@ export async function approveOrder(
       .prepare(
         `INSERT OR IGNORE INTO students (id, email, name, phone, created_at)
          SELECT ?, lower(buyer_email), buyer_name, buyer_phone, ?
-         FROM orders WHERE id = ? AND status = 'pending'`,
+         FROM orders WHERE id = ? AND status = 'pending' AND student_id IS NULL`,
       )
       .bind(crypto.randomUUID(), now, orderId),
     db
