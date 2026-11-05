@@ -53,9 +53,14 @@ export function lessonNumber(key: string): number | null {
   return n === 0 ? null : n;
 }
 
-/** Deterministic resource id, so publishing again updates the same row. */
-export function worksheetId(courseId: string, lessonKey: string, position: number): string {
-  return `${courseId}-${lessonKey}-w${position + 1}`;
+/**
+ * Deterministic resource id from the file, so publishing again updates the same row even when
+ * worksheets are reordered or moved to another lesson: `courses/blueprint/lesson-03.pdf` is
+ * `blueprint-lesson-03`.
+ */
+export function worksheetId(courseId: string, file: string): string {
+  const name = file.slice(file.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "");
+  return `${courseId}-${name}`;
 }
 
 export type ResourceRow = {
@@ -97,8 +102,8 @@ export function toPublication(def: CourseDefinition): Publication {
         title: l.title,
         vimeoId: l.vimeoId,
         ...(l.blurb ? { blurb: l.blurb } : {}),
-        worksheets: l.worksheets.map((w, i) => {
-          const id = worksheetId(def.id, l.key, i);
+        worksheets: l.worksheets.map((w) => {
+          const id = worksheetId(def.id, w.file);
           resources.push({
             id,
             courseId: def.id,
@@ -155,7 +160,7 @@ export function publishStatements(
   const { contentJson, resources } = toPublication(def);
   const statements = resources.map(
     (r) =>
-      `INSERT INTO resources (id, course_id, lesson_key, kind, label, r2_key, content_type, bytes, created_at) VALUES (${q(r.id)}, ${q(r.courseId)}, ${q(r.lessonKey)}, ${q(r.kind)}, ${q(r.label)}, ${q(r.r2Key)}, ${q(r.contentType)}, 0, ${opts.now}) ON CONFLICT(id) DO UPDATE SET lesson_key = excluded.lesson_key, label = excluded.label, r2_key = excluded.r2_key, content_type = excluded.content_type;`,
+      `INSERT INTO resources (id, course_id, lesson_key, kind, label, r2_key, content_type, bytes, created_at) VALUES (${q(r.id)}, ${q(r.courseId)}, ${q(r.lessonKey)}, ${q(r.kind)}, ${q(r.label)}, ${q(r.r2Key)}, ${q(r.contentType)}, 0, ${opts.now}) ON CONFLICT(r2_key) DO UPDATE SET lesson_key = excluded.lesson_key, label = excluded.label, content_type = excluded.content_type;`,
   );
   statements.push(
     `INSERT INTO course_publications (id, course_id, version, content_json, published_at, published_by) SELECT lower(hex(randomblob(16))), ${q(def.id)}, COALESCE(MAX(version), 0) + 1, ${q(contentJson)}, ${opts.now}, ${q(opts.publishedBy)} FROM course_publications WHERE course_id = ${q(def.id)};`,

@@ -179,6 +179,24 @@ describe("generated SQL on D1", () => {
     );
   });
 
+  it("moving a worksheet to another lesson updates its row instead of failing", async () => {
+    const moved = clone();
+    const lessons = moved.modules.flatMap((m) => m.lessons);
+    const from = lessons.find((l) => l.key === "03")!;
+    const to = lessons.find((l) => l.key === "02")!;
+    to.worksheets.push(...from.worksheets.splice(0));
+    await db.batch(
+      publishStatements(moved, { now: NOW + 3000, publishedBy: "test" }).map((s) => db.prepare(s)),
+    );
+    const row = await db
+      .prepare("SELECT lesson_key FROM resources WHERE r2_key = 'courses/blueprint/lesson-03.pdf'")
+      .first<{ lesson_key: string }>();
+    expect(row?.lesson_key).toBe("02");
+    expect(await count("SELECT count(*) AS n FROM resources WHERE course_id = 'blueprint'")).toBe(
+      8,
+    );
+  });
+
   it("an edited label updates the existing resource row", async () => {
     const edited = clone();
     edited.modules[0]!.lessons[0]!.worksheets[0]!.label = "Welcome sheet";
@@ -186,7 +204,7 @@ describe("generated SQL on D1", () => {
       publishStatements(edited, { now: NOW + 2000, publishedBy: "test" }).map((s) => db.prepare(s)),
     );
     const row = await db
-      .prepare("SELECT label FROM resources WHERE id = 'blueprint-00-w1'")
+      .prepare("SELECT label FROM resources WHERE id = 'blueprint-lesson-00'")
       .first<{ label: string }>();
     expect(row?.label).toBe("Welcome sheet");
     expect(await count("SELECT count(*) AS n FROM resources WHERE course_id = 'blueprint'")).toBe(

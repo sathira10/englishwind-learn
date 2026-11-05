@@ -88,6 +88,7 @@ if (command === "publish") {
 }
 
 // upload-commands
+const shellQuote = (s) => `'${s.replaceAll("'", `'\\''`)}'`;
 const from = values.from ?? "./blueprint-v1/public/files/blueprint";
 const { resources } = toPublication(def);
 const envs = values.env ? [values.env] : ENVS;
@@ -96,7 +97,7 @@ for (const env of envs) {
   for (const r of resources) {
     const where = env === "local" ? "--local" : "--remote";
     console.log(
-      `pnpm exec wrangler r2 object put ${BUCKETS[env]}/${r.r2Key} --file ${from}/${basename(r.r2Key)} --content-type ${r.contentType} ${where}`,
+      `pnpm exec wrangler r2 object put ${BUCKETS[env]}/${r.r2Key} --file ${shellQuote(`${from}/${basename(r.r2Key)}`)} --content-type ${r.contentType} ${where}`,
     );
   }
   console.log("");

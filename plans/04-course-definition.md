@@ -26,8 +26,9 @@ Numbering: lesson `number` is the integer value of `key`; `'00'` (the welcome) i
 without a number. Module label is `Module <zero-based index>`. Times are epoch milliseconds (UTC)
 in `published_at`.
 
-Resource ids are deterministic (`<course>-<key>-w<n>`, e.g. `blueprint-03-w1`), so publishing
-again updates the same row instead of adding one. `bytes` is stored as 0 on insert and left alone
+Resource ids are deterministic from the file (`<course>-<file name>`, e.g. `blueprint-lesson-03`),
+and the upsert matches on the unique `r2_key`, so publishing again updates the same row instead
+of adding one, even after a worksheet moves to another lesson. `bytes` is stored as 0 on insert and left alone
 on update: the script cannot know the size before the PDFs are uploaded, and nothing in slices 04
 to 06 reads it.
 
