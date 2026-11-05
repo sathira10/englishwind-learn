@@ -60,7 +60,7 @@ if (def.id !== courseId) fail(`content/courses/${courseId}.ts has id "${def.id}"
 
 if (command === "publish") {
   const env = values.env ?? fail("--env is required (local, staging or production)");
-  const publishedBy = values.by ?? process.env.USER ?? "cli";
+  const publishedBy = values.by ?? "cli";
   const sql = publishStatements(def, { now: Date.now(), publishedBy }).join("\n") + "\n";
   const { content, resources } = toPublication(def);
   const lessons = content.modules.flatMap((m) => m.lessons).length;
