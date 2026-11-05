@@ -32,6 +32,34 @@ pnpm deploy:production
 CI deploys staging on every push to `main`. Production runs from the same workflow by hand and
 waits for approval.
 
+## Publishing a course and uploading worksheets
+
+The course lives in `content/courses/<id>.ts` (plans/04-course-definition.md). The app reads the
+published copy in D1, so an edit to that file reaches students only after a publish.
+
+```sh
+pnpm course:publish blueprint --env local --dry-run   # print the SQL, touch nothing
+pnpm course:publish blueprint --env staging           # or local, production
+```
+
+It checks the definition, then runs `wrangler d1 execute` with a SQL file that upserts the
+worksheet rows in `resources` and adds the next `course_publications` version. Publishing again
+makes version 2, 3 and so on and never duplicates a resource. The course row and offers must
+already exist (migration `0001`), so run the migrations first. If a publish fails part way, run
+it again: the resource upserts are safe to repeat. Check the first staging publish shows one new
+version and 8 resources.
+
+The worksheet PDFs are not in this repo. Print the upload commands, then run them on the Mac
+that has `blueprint-v1` (the default folder is `./blueprint-v1/public/files/blueprint`; change it
+with `--from`):
+
+```sh
+pnpm course:upload-commands blueprint --env staging
+```
+
+Keys are `courses/<courseId>/lesson-NN.pdf` in the private bucket. Upload before students open a
+worksheet; publishing does not check that the objects exist.
+
 ## Migrations
 
 `pnpm db:generate` writes a new SQL file from `src/db/schema.ts`. Never edit an applied one.
