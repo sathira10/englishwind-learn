@@ -11,6 +11,8 @@ import { linkStudent } from "./link-student";
 // Cloudflare sets (cf-connecting-ip), never one the client can choose.
 export const OTP_SEND_LIMIT = { window: 10 * 60, max: 3 } as const;
 export const OTP_VERIFY_LIMIT = { window: 10 * 60, max: 10 } as const;
+// Per lower-cased email address, on top of the per-IP limit (email-limit.ts).
+export const EMAIL_SEND_LIMIT = { window: 60 * 60, max: 5 } as const;
 
 export interface AuthDeps {
   mailer: Mailer;
@@ -39,7 +41,9 @@ export function createAuth(env: AuthEnv, deps: AuthDeps) {
       googleId && googleSecret
         ? { google: { clientId: googleId, clientSecret: googleSecret } }
         : {},
-    account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
+    // No trustedProviders: Better Auth then links a social login to an existing user only when
+    // the provider reports the email as verified AND the local user is verified.
+    account: { accountLinking: { enabled: true } },
     plugins: [
       emailOTP({
         otpLength: 6,
@@ -59,6 +63,9 @@ export function createAuth(env: AuthEnv, deps: AuthDeps) {
       customRules: {
         "/email-otp/send-verification-otp": OTP_SEND_LIMIT,
         "/sign-in/email-otp": OTP_VERIFY_LIMIT,
+        // Matches no real path. It only tells Better Auth's pruning of old `rate_limits` rows that
+        // a 1 hour window exists, so the per-email counters (email-limit.ts) are not pruned early.
+        "/__keep-rate-limit-rows-for-the-email-window": EMAIL_SEND_LIMIT,
       },
     },
     advanced: {

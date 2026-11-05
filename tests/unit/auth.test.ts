@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
+import { Hono } from "hono";
+import { requireStudent, type AppEnv } from "../../src/worker/auth/require-student";
 import { createApp } from "../../src/worker/app";
 import { linkStudent } from "../../src/worker/auth/link-student";
 import { createConsoleMailer } from "../../src/worker/mail/console";
@@ -23,8 +25,11 @@ function setup() {
   };
   const app = createApp({ mailer });
   const ip = freshIp();
-  const call = (path: string, init: RequestInit & { cookie?: string; ip?: string } = {}) => {
-    const { cookie, ip: ipOverride, ...rest } = init;
+  const call = (
+    path: string,
+    init: RequestInit & { cookie?: string; ip?: string; extra?: Record<string, string> } = {},
+  ) => {
+    const { cookie, ip: ipOverride, extra, ...rest } = init;
     return app.fetch(
       new Request(`${ORIGIN}${path}`, {
         ...rest,
@@ -33,6 +38,7 @@ function setup() {
           "content-type": "application/json",
           "cf-connecting-ip": ipOverride ?? ip,
           ...(cookie ? { cookie } : {}),
+          ...extra,
         },
       }),
       env,
@@ -161,12 +167,102 @@ describe("student linking", () => {
     expect(row?.name).toBe(email.split("@")[0]);
   });
 
-  it("linkStudent is idempotent and keeps an existing link", async () => {
+  it("linkStudent is idempotent for the same user", async () => {
     const email = `idem-${unique()}@example.lk`;
-    const first = await linkStudent(env.DB, { id: "user-a", email });
-    const again = await linkStudent(env.DB, { id: "user-b", email: email.toUpperCase() });
-    expect(again).toBe(first);
-    expect((await studentByEmail(email))?.user_id).toBe("user-a");
+    const user = { id: `u-${unique()}`, email, emailVerified: true };
+    const first = await linkStudent(env.DB, user);
+    const again = await linkStudent(env.DB, { ...user, email: email.toUpperCase() });
+    expect(first.status).toBe("linked");
+    expect(again).toEqual(first);
+  });
+
+  it("linkStudent does not link an unverified email, and creates no row", async () => {
+    const email = `unverified-${unique()}@example.lk`;
+    await env.DB.prepare("INSERT INTO students (id, email, name, created_at) VALUES (?, ?, 'B', 1)")
+      .bind(`stu-${unique()}`, email)
+      .run();
+    const result = await linkStudent(env.DB, { id: `u-${unique()}`, email, emailVerified: false });
+    expect(result).toEqual({ status: "unverified" });
+    expect((await studentByEmail(email))?.user_id).toBeNull();
+    const fresh = `unverified-new-${unique()}@example.lk`;
+    await linkStudent(env.DB, { id: `u-${unique()}`, email: fresh, emailVerified: false });
+    expect(await studentByEmail(fresh)).toBeNull();
+  });
+
+  it("linkStudent refuses a row that belongs to a different user", async () => {
+    const email = `taken-${unique()}@example.lk`;
+    const owner = `u-${unique()}`;
+    await linkStudent(env.DB, { id: owner, email, emailVerified: true });
+    const result = await linkStudent(env.DB, { id: `u-${unique()}`, email, emailVerified: true });
+    expect(result).toEqual({ status: "conflict" });
+    expect((await studentByEmail(email))?.user_id).toBe(owner);
+  });
+
+  it("linkStudent reports a conflict when the user is already linked under another email", async () => {
+    const userId = `u-${unique()}`;
+    await linkStudent(env.DB, {
+      id: userId,
+      email: `old-${unique()}@example.lk`,
+      emailVerified: true,
+    });
+    const result = await linkStudent(env.DB, {
+      id: userId,
+      email: `new-${unique()}@example.lk`,
+      emailVerified: true,
+    });
+    expect(result).toEqual({ status: "conflict" });
+  });
+});
+
+describe("requireStudent with a given session", () => {
+  // A stand-in for Better Auth's getSession, so the verified flag can be chosen.
+  function appFor(user: { id: string; email: string; name: string; emailVerified: boolean }) {
+    const app = new Hono<AppEnv>();
+    app.use("*", async (c, next) => {
+      c.set("auth", { api: { getSession: async () => ({ user }) } } as never);
+      await next();
+    });
+    app.get("/x", requireStudent, (c) => c.json(c.var.student));
+    return app;
+  }
+  const run = (user: Parameters<typeof appFor>[0]) =>
+    appFor(user).fetch(new Request("https://learn.test/x"), env);
+
+  it("answers 403 email_not_verified and links nothing for an unverified user", async () => {
+    const email = `rs-unverified-${unique()}@example.lk`;
+    const res = await run({ id: `u-${unique()}`, email, name: "", emailVerified: false });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "email_not_verified" });
+    expect(await studentByEmail(email)).toBeNull();
+  });
+
+  it("links and answers 200 for a verified user", async () => {
+    const email = `rs-ok-${unique()}@example.lk`;
+    const id = `u-${unique()}`;
+    const res = await run({ id, email, name: "", emailVerified: true });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ userId: id, email });
+    expect((await studentByEmail(email))?.user_id).toBe(id);
+  });
+
+  it("answers 409 when the email's student row belongs to another user", async () => {
+    const email = `rs-taken-${unique()}@example.lk`;
+    await linkStudent(env.DB, { id: `u-${unique()}`, email, emailVerified: true });
+    const res = await run({ id: `u-${unique()}`, email, name: "", emailVerified: true });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "account_conflict" });
+  });
+
+  it("keeps serving a linked user whose email has changed", async () => {
+    const id = `u-${unique()}`;
+    await linkStudent(env.DB, { id, email: `rs-old-${unique()}@example.lk`, emailVerified: true });
+    const res = await run({
+      id,
+      email: `rs-new-${unique()}@example.lk`,
+      name: "",
+      emailVerified: true,
+    });
+    expect(res.status).toBe(200);
   });
 });
 
@@ -180,6 +276,59 @@ describe("rate limits", () => {
     }
     expect(statuses).toEqual([200, 200, 200, 429]);
     expect(t.sent).toHaveLength(3);
+  });
+
+  it("ignores x-forwarded-for, which a client can set", async () => {
+    const t = setup();
+    const ip = freshIp();
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const res = await t.call("/api/auth/email-otp/send-verification-otp", {
+        method: "POST",
+        body: JSON.stringify({ email: `xff-${unique()}@example.lk`, type: "sign-in" }),
+        ip,
+        extra: { "x-forwarded-for": `10.9.${i}.${i + 1}` },
+      });
+      statuses.push(res.status);
+    }
+    expect(statuses).toEqual([200, 200, 200, 429]);
+  });
+
+  it("caps sends to one address at 5 per hour across IPs", async () => {
+    const t = setup();
+    const email = `flood-${unique()}@example.lk`;
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      statuses.push((await t.sendCode(i % 2 ? email.toUpperCase() : email, freshIp())).status);
+    }
+    expect(statuses).toEqual([200, 200, 200, 200, 200, 429]);
+    expect(t.sent).toHaveLength(5);
+    const rows = await env.DB.prepare(
+      "SELECT key FROM rate_limits WHERE key LIKE 'otp-email:%'",
+    ).all<{ key: string }>();
+    expect(rows.results.length).toBeGreaterThan(0);
+    for (const { key } of rows.results) expect(key).not.toContain("flood-");
+  });
+
+  it("answers 429 the same way for an address with no account", async () => {
+    const t = setup();
+    const email = `ghost-${unique()}@example.lk`;
+    let last: Response | undefined;
+    for (let i = 0; i < 6; i++) last = await t.sendCode(email, freshIp());
+    expect(last!.status).toBe(429);
+    expect(await last!.json()).toEqual({ message: "Too many requests. Please try again later." });
+  });
+
+  it("refuses a 4th guess on one code even if it is the right one", async () => {
+    const t = setup();
+    const email = `guess-${unique()}@example.lk`;
+    await t.sendCode(email);
+    const real = t.sent[0]!.code;
+    const wrong = real === "000000" ? "111111" : "000000";
+    for (let i = 0; i < 3; i++) expect((await t.signIn(email, wrong)).status).toBe(400);
+    const res = await t.signIn(email, real);
+    expect(res.status).toBe(403);
+    expect(res.headers.getSetCookie()).toEqual([]);
   });
 
   it("does not count another IP against the limit", async () => {

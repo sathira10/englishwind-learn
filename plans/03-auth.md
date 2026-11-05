@@ -10,17 +10,17 @@ row that holds their orders and grants. No screens yet (slice 06).
 
 ### Inputs and outputs
 
-| Name                                             | Type and unit                                      | Notes                                                                            |
-| ------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `POST /api/auth/email-otp/send-verification-otp` | body `{ email, type: "sign-in" }`                  | Sends a code. Creates the user on first sign-in. Always answers `{success:true}` |
-| `POST /api/auth/sign-in/email-otp`               | body `{ email, otp }`                              | Checks the code, sets the session cookie                                         |
-| `GET /api/auth/*` and the rest of Better Auth    | Better Auth's own routes                           | Session, sign-out, and Google (`/sign-in/social`) when enabled                   |
-| `GET /api/me`                                    | `{ name: string, email: string }` or 401 `{error}` | The signed-in student's own row only                                             |
-| `requireStudent`                                 | Hono middleware                                    | 401 JSON, else `c.var.student = { userId, studentId, email }`                    |
-| `BETTER_AUTH_SECRET`                             | secret, 32+ chars                                  | `.dev.vars` locally, Worker secret elsewhere (Q7). Never in `wrangler.jsonc`     |
-| `BETTER_AUTH_URL`                                | var, origin                                        | Public. `http://localhost:5173` locally; decides `Secure` on cookies             |
-| `MAIL_DRIVER`                                    | var, `console` or `cloudflare`                     | `console` refuses to run on a public https host                                  |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`       | optional secrets                                   | Google is enabled only when both are set (Q5)                                    |
+| Name                                             | Type and unit                                      | Notes                                                                                                           |
+| ------------------------------------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/email-otp/send-verification-otp` | body `{ email, type: "sign-in" }`                  | Sends a code. Creates the user on first sign-in. Always answers `{success:true}`                                |
+| `POST /api/auth/sign-in/email-otp`               | body `{ email, otp }`                              | Checks the code, sets the session cookie                                                                        |
+| `GET /api/auth/*` and the rest of Better Auth    | Better Auth's own routes                           | Session, sign-out, and Google (`/sign-in/social`) when enabled                                                  |
+| `GET /api/me`                                    | `{ name: string, email: string }` or 401 `{error}` | The signed-in student's own row only                                                                            |
+| `requireStudent`                                 | Hono middleware                                    | 401 JSON; 403 `email_not_verified`; 409 `account_conflict`; else `c.var.student = { userId, studentId, email }` |
+| `BETTER_AUTH_SECRET`                             | secret, 32+ chars                                  | `.dev.vars` locally, Worker secret elsewhere (Q7). Never in `wrangler.jsonc`                                    |
+| `BETTER_AUTH_URL`                                | var, origin                                        | Public. `http://localhost:5173` locally; decides `Secure` on cookies                                            |
+| `MAIL_DRIVER`                                    | var, `console` or `cloudflare`                     | `console` refuses to run on a public https host                                                                 |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`       | optional secrets                                   | Google is enabled only when both are set (Q5)                                                                   |
 
 Times are epoch milliseconds (UTC). Code lifetime 5 minutes, session lifetime 30 days (refreshed
 daily on use).
@@ -37,8 +37,15 @@ Rate limits (per client IP, from `cf-connecting-ip`, per endpoint, stored in `ra
 | `/sign-in/email-otp`               | 10 per 10 minutes | Guessing a 6-digit code; each code also dies after 3 wrong tries             |
 | every other auth endpoint          | 60 per minute     | Better Auth's own tighter defaults for sign-in apply where they are stricter |
 
-The limit is per IP, not per address: many IPs could still flood one inbox slowly. Not solved
-here (see out of scope).
+On top of the per-IP limits, each lower-cased address may be sent **5 codes per hour**, counted in
+`rate_limits` under `otp-email:<sha256(email)>` (never the raw address). Why: the per-IP limits
+alone let an attacker spread guesses and sends across many IPs. A code has 10^6 values and dies
+after 3 wrong tries or 5 minutes, so one address can only be guessed at 3 times per code, and at
+most 5 codes an hour means at most 15 guesses an hour whatever the number of IPs (about 1 in
+67,000 per hour). The cap is checked before Better Auth's per-IP counter and answers the same 429
+whether or not the address has an account. Cost: someone who knows a student's address can use
+up their 5 sends and lock them out of codes for up to an hour. Accepted for launch; Amma can
+message them on WhatsApp.
 
 ### Reference cases
 
@@ -56,6 +63,11 @@ and `tests/unit/email.test.ts`.
 | A7   | 11 code checks from one IP inside 10 minutes                          | the 11th is 429                                                             |
 | A8   | Console mailer sends to `kasun.perera@gmail.com`                      | log line holds `k***@gmail.com`, not the full address                       |
 | A9   | `MAIL_DRIVER=cloudflare`                                              | sending throws "not configured" until Q6                                    |
+| A11  | Same address asks for 6 codes from 6 IPs in an hour                   | 5 sent, the 6th is 429; the key holds a hash, not the address               |
+| A12  | `x-forwarded-for` changes on every request, `cf-connecting-ip` fixed  | still limited (the header is ignored)                                       |
+| A13  | 3 wrong guesses, then the right code                                  | refused (403), no cookie                                                    |
+| A14  | User with an unverified email                                         | not linked to any `students` row; `/api/me` 403 `email_not_verified`        |
+| A15  | The email's `students` row belongs to another user                    | not taken over; `/api/me` 409 `account_conflict`                            |
 | A10  | Session cookie                                                        | `HttpOnly`, `Secure` (on https), `SameSite=Lax`                             |
 
 ### Properties

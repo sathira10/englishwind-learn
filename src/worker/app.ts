@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { createAuth } from "./auth/create-auth";
+import { consumeEmailSend } from "./auth/email-limit";
 import type { AppEnv } from "./auth/require-student";
 import { mailerFromEnv, type Mailer } from "./mail";
 import { health } from "./routes/health";
@@ -32,6 +33,18 @@ export function createApp(options: AppOptions = {}) {
     await next();
   });
 
+  // Per-address cap on code sends, before Better Auth's per-IP limit. The answer is the same
+  // whether or not the address has an account.
+  app.post("/auth/email-otp/send-verification-otp", async (c) => {
+    const body = (await c.req.raw
+      .clone()
+      .json()
+      .catch(() => null)) as { email?: unknown } | null;
+    if (typeof body?.email === "string" && !(await consumeEmailSend(c.env.DB, body.email))) {
+      return c.json({ message: "Too many requests. Please try again later." }, 429);
+    }
+    return c.var.auth.handler(c.req.raw);
+  });
   app.on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw));
   app.route("/health", health);
   app.route("/me", me);
