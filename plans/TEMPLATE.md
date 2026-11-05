@@ -10,9 +10,9 @@ Agree this section before writing code.
 
 ### Inputs and outputs
 
-| Name | Type and unit | Notes |
-| --- | --- | --- |
-| | e.g. `amountCents: integer, LKR cents` | |
+| Name | Type and unit                          | Notes |
+| ---- | -------------------------------------- | ----- |
+|      | e.g. `amountCents: integer, LKR cents` |       |
 
 Times are UTC in storage and Asia/Colombo on screen. Money is integer LKR cents.
 
@@ -22,8 +22,8 @@ Hand-checked examples with the expected result. These become `tests/reference/` 
 or approved by Sathira.
 
 | Case | Given | Expected |
-| --- | --- | --- |
-| | | |
+| ---- | ----- | -------- |
+|      |       |          |
 
 ### Properties
 
