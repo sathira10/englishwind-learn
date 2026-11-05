@@ -27,7 +27,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "deploy:staging": "CLOUDFLARE_ENV=staging vite build && wrangler d1 migrations apply DB --remote --env staging && wrangler deploy",
-    "deploy:production": "CLOUDFLARE_ENV=production vite build && wrangler d1 migrations apply DB --remote --env production && wrangler deploy"
+    "deploy:production": "CLOUDFLARE_ENV=production vite build && wrangler d1 migrations apply DB --remote --env production && wrangler deploy",
+    "course:publish": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/course.mjs publish",
+    "course:upload-commands": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/course.mjs upload-commands"
   },
   "dependencies": {
     "better-auth": "^1.7.17",
