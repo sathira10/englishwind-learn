@@ -13,6 +13,7 @@ start a slice from its plan file, not from what they remember.
 | [03-auth.md](03-auth.md)                           | In review: email code sign-in, Google optional          |
 | [04-course-definition.md](04-course-definition.md) | Active: Blueprint as data, publish command              |
 | [05-lesson-access.md](05-lesson-access.md)         | Built: grant check on lesson and worksheet routes       |
+| [06-student-screens.md](06-student-screens.md)     | Built: sign-in, courses, lesson player, mark complete   |
 | [07-order-rules.md](07-order-rules.md)             | Active: order rules; steps 1 and 2 built                |
 | [08-admin-access.md](08-admin-access.md)           | In review: Access JWT verified, role from `staff_roles` |
 | [13-order-form.md](13-order-form.md)               | Active: order form, order API, orders in D1             |
