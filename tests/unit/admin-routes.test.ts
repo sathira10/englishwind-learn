@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AuditEntry, StudentDetail } from "../../src/shared/admin";
 import { createKeyProvider, type Jwk } from "../../src/worker/admin/access";
+import { attachOrder } from "../../src/worker/admin/repo";
 import { createPendingOrder } from "../../src/worker/orders/repo";
 import { createAdmin } from "../../src/worker/routes/admin";
 
@@ -466,6 +467,29 @@ describe("orders", () => {
       .first<{ student_id: string }>();
     expect(grant!.student_id).toBe(s.id);
     expect(await count("SELECT count(*) AS n FROM students WHERE email = ?", buyerEmail)).toBe(0);
+  });
+
+  it("answers conflict, with no audit row, when the order is decided during the attach", async () => {
+    const s = await student();
+    const order = await pendingOrder();
+    // Rejects the order just before the attach batch runs, as a second tab could.
+    const racing = new Proxy(DB, {
+      get(target, prop) {
+        if (prop === "batch") {
+          return async (statements: D1PreparedStatement[]) => {
+            await DB.prepare("UPDATE orders SET status = 'rejected' WHERE id = ?")
+              .bind(order.id)
+              .run();
+            return target.batch(statements);
+          };
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const result = await attachOrder(racing, order.id, s.id, "amma@example.com");
+    expect(result).toEqual({ ok: false, error: "conflict" });
+    expect(await auditCount("order.attach", order.id)).toBe(0);
   });
 
   it("refuses to attach an approved order, an unknown order or an unknown student", async () => {

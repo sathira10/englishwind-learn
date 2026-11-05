@@ -75,7 +75,7 @@ export async function getAdminOrder(db: D1Database, id: string): Promise<AdminOr
   return row ? toAdminOrder(row) : null;
 }
 
-export type AttachError = "not_found" | "student_not_found" | "not_pending";
+export type AttachError = "not_found" | "student_not_found" | "not_pending" | "conflict";
 
 /** Link a pending order to a student, so approving it grants access to that account. */
 export async function attachOrder(
@@ -94,7 +94,7 @@ export async function attachOrder(
   if (!student) return { ok: false, error: "student_not_found" };
   if (order.status !== "pending") return { ok: false, error: "not_pending" };
 
-  await db.batch([
+  const [update] = await db.batch([
     db
       .prepare("UPDATE orders SET student_id = ? WHERE id = ? AND status = 'pending'")
       .bind(studentId, orderId),
@@ -108,10 +108,10 @@ export async function attachOrder(
       { onlyIfChanged: true, at: now },
     ),
   ]);
+  // Decided between our read and the update: nothing changed and no audit row was written.
+  if ((update?.meta.changes ?? 0) === 0) return { ok: false, error: "conflict" };
   const after = await getAdminOrder(db, orderId);
   if (!after) return { ok: false, error: "not_found" };
-  // Approved or rejected in the meantime: the update changed nothing.
-  if (after.studentId !== studentId) return { ok: false, error: "not_pending" };
   return { ok: true, order: after };
 }
 
@@ -161,9 +161,12 @@ export const MIN_SEARCH_LENGTH = 2;
 export const MAX_SEARCH_LENGTH = 100;
 const SEARCH_LIMIT = 25;
 
-/** Escape LIKE wildcards so a search for `%` or `_` matches only those characters. */
+/**
+ * Escape LIKE wildcards so a search for `%` or `_` matches only those characters. Only A to Z
+ * are lower-cased, which is all SQLite's lower() does, so JavaScript and SQL agree.
+ */
 export function likePattern(q: string): string {
-  return `%${q.toLowerCase().replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+  return `%${q.replace(/[A-Z]/g, (ch) => ch.toLowerCase()).replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
 }
 
 /** Students whose email, name or phone contains `q`, case-insensitively. */

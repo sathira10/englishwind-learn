@@ -103,7 +103,7 @@ export default function QueuePage() {
                   <dd className="m-0 inline">
                     <a
                       href={`tel:${order.buyerPhone.replace(/[^+\d]/g, "")}`}
-                      className="font-bold"
+                      className="inline-flex min-h-12 items-center font-bold"
                     >
                       {order.buyerPhone}
                     </a>

@@ -19,20 +19,20 @@ All routes are under `/api/admin`, behind `requireStaff` (owner or admin). Error
 `{ error, fields? }`. Times are UTC epoch ms in the API and Asia/Colombo on screen. Money is integer
 LKR cents.
 
-| Route                         | Body or query                                             | Result and errors                                                                |
-| ----------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `GET /orders?status=`         | `pending` (default), `approved`, `rejected`               | `{ orders }`, oldest first for pending, newest first otherwise, at most 100      |
-| `POST /orders/:id/approve`    | `{ staffChecked?: boolean }`                              | `{ order, granted }`; 404 `not_found`; 409 `rejected`, `staff_check_required`    |
-| `POST /orders/:id/reject`     | `{ reason?: string (max 500) }`                           | `{ order }`; 404; 409 `already_approved`                                         |
-| `POST /orders`                | `{ offer, name, email, phone }`                           | 201 `{ order }`; 404 `offer_not_found`; 422. Same field rules as plan 13         |
-| `POST /orders/:id/attach`     | `{ studentId }`                                           | `{ order }`; 404 `not_found` or `student_not_found`; 409 `not_pending`           |
-| `GET /students?q=`            | 2 to 100 characters                                       | `{ students }` (at most 25) matching email, name or phone, case-insensitive      |
-| `GET /students/:id`           | -                                                         | `{ student, grants, orders, progress }`; 404                                     |
-| `POST /students/:id/grants`   | `{ courseId, years? }`                                    | 201 `{ grant }`; 404; 409 `already_has_access`. `years` defaults to the course's |
-| `POST /grants/:id/extend`     | `{ years: integer 1 to 10 }`                              | `{ grant }`; 404; 409 `revoked`, `conflict`                                      |
-| `POST /grants/:id/revoke`     | `{ reason: string 1 to 500 }`                             | `{ grant }`; 404. Revoking again keeps the first time and reason                 |
-| `GET /audit?before=&limit=`   | `before` is an opaque cursor; limit 1 to 100 (default 50) | `{ entries, next }`, newest first; `next` is null on the last page               |
-| `GET /offers`, `GET /courses` | -                                                         | Active offers and courses, for the forms                                         |
+| Route                         | Body or query                                             | Result and errors                                                                  |
+| ----------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `GET /orders?status=`         | `pending` (default), `approved`, `rejected`               | `{ orders }`, oldest first for pending, newest first otherwise, at most 100        |
+| `POST /orders/:id/approve`    | `{ staffChecked?: boolean }`                              | `{ order, granted }`; 404 `not_found`; 409 `rejected`, `staff_check_required`      |
+| `POST /orders/:id/reject`     | `{ reason?: string (max 500) }`                           | `{ order }`; 404; 409 `already_approved`                                           |
+| `POST /orders`                | `{ offer, name, email, phone }`                           | 201 `{ order }`; 404 `offer_not_found`; 422. Same field rules as plan 13           |
+| `POST /orders/:id/attach`     | `{ studentId }`                                           | `{ order }`; 404 `not_found` or `student_not_found`; 409 `not_pending`, `conflict` |
+| `GET /students?q=`            | 2 to 100 characters                                       | `{ students }` (at most 25) matching email, name or phone, case-insensitive        |
+| `GET /students/:id`           | -                                                         | `{ student, grants, orders, progress }`; 404                                       |
+| `POST /students/:id/grants`   | `{ courseId, years? }`                                    | 201 `{ grant }`; 404; 409 `already_has_access`. `years` defaults to the course's   |
+| `POST /grants/:id/extend`     | `{ years: integer 1 to 10 }`                              | `{ grant }`; 404; 409 `revoked`, `conflict`                                        |
+| `POST /grants/:id/revoke`     | `{ reason: string 1 to 500 }`                             | `{ grant }`; 404. Revoking again keeps the first time and reason                   |
+| `GET /audit?before=&limit=`   | `before` is an opaque cursor; limit 1 to 100 (default 50) | `{ entries, next }`, newest first; `next` is null on the last page                 |
+| `GET /offers`, `GET /courses` | -                                                         | Active offers and courses, for the forms                                           |
 
 CSRF: the `CF_Authorization` cookie authenticates cross-site requests, so every POST, PUT, PATCH and
 DELETE requires `Content-Type: application/json` (415 otherwise) and an `Origin` header equal to the

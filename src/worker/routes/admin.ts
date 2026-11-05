@@ -140,7 +140,10 @@ export function createAdmin(options?: RequireStaffOptions) {
           c.get("staff").email,
         );
         if (!result.ok) {
-          return c.json(error(result.error), result.error === "not_pending" ? 409 : 404);
+          return c.json(
+            error(result.error),
+            result.error === "not_pending" || result.error === "conflict" ? 409 : 404,
+          );
         }
         return c.json({ order: result.order });
       })
