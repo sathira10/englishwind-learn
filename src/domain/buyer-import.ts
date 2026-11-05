@@ -25,7 +25,11 @@ export type RowError = { line: number; message: string };
 export type ParseResult = { rows: BuyerRow[]; errors: RowError[] };
 
 /** Splits CSV text into records of fields, each with its starting line. Handles "quoted, fields". */
-function records(text: string): { line: number; fields: string[] }[] {
+function records(text: string): {
+  recs: { line: number; fields: string[] }[];
+  /** The line where a quote was opened and never closed, if the file ends inside one. */
+  unclosedQuoteLine: number | null;
+} {
   const out: { line: number; fields: string[] }[] = [];
   let fields: string[] = [];
   let field = "";
@@ -61,8 +65,10 @@ function records(text: string): { line: number; fields: string[] }[] {
       start = line;
     } else field += ch;
   }
+  // Ending inside a quote means the last record swallowed the rest of the file: drop it.
+  if (quoted) return { recs: out, unclosedQuoteLine: start };
   if (field !== "" || fields.length > 0) endRecord();
-  return out;
+  return { recs: out, unclosedQuoteLine: null };
 }
 
 /** The instant a Colombo calendar date begins (midnight, UTC+05:30), or null if not a real date. */
@@ -81,13 +87,28 @@ export function colomboMidnight(date: string): number | null {
  * line number and left out; duplicate emails (after normalising) are errors on the later row.
  */
 export function parseBuyersCsv(text: string): ParseResult {
-  const recs = records(text);
+  const { recs, unclosedQuoteLine } = records(text);
   const errors: RowError[] = [];
+  if (unclosedQuoteLine !== null) {
+    errors.push({
+      line: unclosedQuoteLine,
+      message: "unclosed quote (the row runs to the end of the file)",
+    });
+  }
   const header = recs.shift();
-  if (!header) return { rows: [], errors: [{ line: 1, message: "the file is empty" }] };
+  if (!header) return { rows: [], errors: [...errors, { line: 1, message: "the file is empty" }] };
   const names = header.fields.map((h) => h.trim().toLowerCase());
   const missing = REQUIRED.filter((c) => !names.includes(c));
   const unknown = names.filter((n) => !(COLUMNS as readonly string[]).includes(n));
+  const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+  if (dupes.length > 0) {
+    return {
+      rows: [],
+      errors: [
+        { line: header.line, message: `duplicate column: ${[...new Set(dupes)].join(", ")}` },
+      ],
+    };
+  }
   if (missing.length > 0) {
     return {
       rows: [],
@@ -117,7 +138,7 @@ export function parseBuyersCsv(text: string): ParseResult {
     const name = col(fields, "name");
     const purchasedOn = col(fields, "purchased_on");
     const problems: string[] = [];
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push(`bad email "${email}"`);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push("bad email");
     if (name === "") problems.push("name is empty");
     if (purchasedOn === "") problems.push("purchased_on is empty");
     else if (colomboMidnight(purchasedOn) === null) {

@@ -137,7 +137,7 @@ describe("parseBuyersCsv", () => {
       "﻿purchased_on,name,email\r\n2026-01-02,A,a@example.org\r\n\r\n2026-01-03,B,not-an-email\r\n",
     );
     expect(r.rows).toHaveLength(1);
-    expect(r.errors).toEqual([{ line: 4, message: 'bad email "not-an-email"' }]);
+    expect(r.errors).toEqual([{ line: 4, message: "bad email" }]);
   });
 
   it("keeps the line count right across a quoted newline and an escaped quote", () => {
@@ -159,6 +159,34 @@ describe("parseBuyersCsv", () => {
     expect(parseBuyersCsv(`${HEADER}a@example.org,A,,2026-01-02,x,y\n`).errors[0]!.message).toBe(
       "too many columns (6, expected 5)",
     );
+  });
+
+  it("reports an unclosed quote instead of swallowing the rest of the file", () => {
+    const r = parseBuyersCsv(
+      `${HEADER}a@example.org,"Open name,,2026-01-02,\nb@example.org,B,,2026-01-03,\nc@example.org,C,,2026-01-04,\n`,
+    );
+    expect(r.errors).toEqual([expect.objectContaining({ line: 2 })]);
+    expect(r.errors[0]!.message).toContain("unclosed quote");
+    expect(r.rows).toEqual([]);
+    // A quote closed on a later line is fine; rows before the open one still parse.
+    const ok = parseBuyersCsv(
+      `${HEADER}b@example.org,B,,2026-01-03,\nc@example.org,"C,,2026-01-04,\n`,
+    );
+    expect(ok.rows.map((x) => x.email)).toEqual(["b@example.org"]);
+    expect(ok.errors).toEqual([expect.objectContaining({ line: 3 })]);
+  });
+
+  it("rejects a repeated column name", () => {
+    const r = parseBuyersCsv(
+      "email,name,email,purchased_on\na@example.org,A,b@example.org,2026-01-02\n",
+    );
+    expect(r.rows).toEqual([]);
+    expect(r.errors).toEqual([{ line: 1, message: "duplicate column: email" }]);
+  });
+
+  it("does not repeat the address in a bad-email error", () => {
+    const r = parseBuyersCsv(`${HEADER}secret-person-at-example,A,,2026-01-02,\n`);
+    expect(JSON.stringify(r.errors)).not.toContain("secret-person");
   });
 
   it("requires a name and reports every problem on a row", () => {
