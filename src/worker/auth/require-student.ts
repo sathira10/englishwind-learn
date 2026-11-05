@@ -1,4 +1,5 @@
 import { createMiddleware } from "hono/factory";
+import type { Mailer } from "../mail/mailer";
 import type { Auth } from "./create-auth";
 import { findLinkedStudent, linkStudent } from "./link-student";
 
@@ -10,7 +11,13 @@ export interface StudentContext {
 
 export type AppEnv = {
   Bindings: Env;
-  Variables: { auth: Auth; student: StudentContext };
+  Variables: {
+    auth: Auth;
+    student: StudentContext;
+    mailer: Mailer;
+    /** The request's `ctx.waitUntil`; undefined when there is no execution context. */
+    waitUntil: ((promise: Promise<unknown>) => void) | undefined;
+  };
 };
 
 /**

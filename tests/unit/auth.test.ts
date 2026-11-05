@@ -1,3 +1,4 @@
+import { captureMailer } from "./capture-mailer";
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { Hono } from "hono";
@@ -21,6 +22,7 @@ const freshIp = () => `203.0.${Math.floor(counter / 250)}.${(++counter % 250) + 
 function setup() {
   const sent: { to: string; code: string }[] = [];
   const mailer: Mailer = {
+    ...captureMailer(),
     async sendLoginCode(to, code) {
       sent.push({ to, code });
     },
