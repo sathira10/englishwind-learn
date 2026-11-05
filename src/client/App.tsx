@@ -1,12 +1,17 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
+import { CoursePage } from "./screens/CoursePage";
+import { LessonPage } from "./screens/LessonPage";
+import { MyCourses } from "./screens/MyCourses";
+import { NotFoundScreen, Shell } from "./screens/Shell";
+import { SignIn } from "./screens/SignIn";
 import OrderPage from "./OrderPage";
 
 // Dev-only specimen page. The condition is a build-time constant, so production builds drop both
 // the route and the import.
 const ComponentsPage = import.meta.env.DEV ? lazy(() => import("./dev/ComponentsPage")) : null;
 
-// Placeholder shell. Screens arrive with their slices (plans/roadmap.md).
+// Student screens are slice 06; the admin and the order form arrive with their slices.
 export function App() {
   return (
     <Routes>
@@ -22,7 +27,18 @@ export function App() {
           }
         />
       ) : null}
-      <Route path="*" element={<Home />} />
+      <Route path="/" element={<MyCourses />} />
+      <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/courses/:courseId" element={<CoursePage />} />
+      <Route path="/courses/:courseId/lessons/:key" element={<LessonPage />} />
+      <Route
+        path="*"
+        element={
+          <Shell signedIn={false}>
+            <NotFoundScreen />
+          </Shell>
+        }
+      />
     </Routes>
   );
 }
@@ -41,19 +57,6 @@ function Admin() {
       <div className="mx-auto max-w-page px-4">
         <h1 className="font-display text-h2 font-bold text-fg-strong">Admin</h1>
         <p className="mt-4 max-w-measure text-body text-fg">{who}</p>
-      </div>
-    </main>
-  );
-}
-
-function Home() {
-  return (
-    <main className="ew-section">
-      <div className="mx-auto max-w-page px-4">
-        <h1 className="font-display text-h2 font-bold text-fg-strong">EnglishWind Learn</h1>
-        <p className="mt-4 max-w-measure text-body text-fg">
-          The learning app is being built. Lessons will appear here.
-        </p>
       </div>
     </main>
   );
