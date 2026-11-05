@@ -71,7 +71,7 @@ Sathira's copy in `tests/reference/` (Q10).
 1. **D1 orders repository.** `src/worker/orders/` with create, approve, reject, and tests.
    This is also plan 07 step 2. Done when a double approve finds one grant.
 2. **Public API.** `POST /api/orders`, `GET /api/offers/:slug`, bank details module, rate limits.
-3. **Order page.** `/order/:offer`: form, then confirmation.
+3. **Order page (built).** `/order/:offer`: form, then confirmation.
 
 ## Decisions
 
