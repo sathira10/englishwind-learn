@@ -18,6 +18,11 @@ Each has its own D1 database, R2 bucket, secrets and Access policy.
    `wrangler.jsonc`.
 3. In GitHub: add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as secrets, and create a
    `production` environment with Sathira as a required reviewer.
+4. For the nightly backup ([operations.md](operations.md)), add these repository secrets as well:
+   `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` (an R2 API token with read access to both
+   buckets, made in the Cloudflare dashboard under R2, Manage API tokens) and `BACKUP_PASSPHRASE`
+   (a long random passphrase, also kept in a password manager). `CLOUDFLARE_API_TOKEN` needs D1
+   read access for the export.
 
 ## Deploy
 
