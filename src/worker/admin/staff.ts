@@ -1,5 +1,6 @@
 import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
+import type { Mailer } from "../mail";
 import { defaultKeyProvider, verifyAccessJwt, type KeyProvider } from "./access";
 
 export type StaffRole = "owner" | "admin";
@@ -7,7 +8,15 @@ export interface Staff {
   email: string;
   role: StaffRole;
 }
-export type AdminEnv = { Bindings: Env; Variables: { staff: Staff } };
+export type AdminEnv = {
+  Bindings: Env;
+  Variables: {
+    staff: Staff;
+    /** Set by the app's middleware (src/worker/app.ts); absent when the admin runs on its own. */
+    mailer?: Mailer;
+    waitUntil?: ((promise: Promise<unknown>) => void) | undefined;
+  };
+};
 
 export interface RequireStaffOptions {
   keys?: KeyProvider;

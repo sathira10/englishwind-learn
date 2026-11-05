@@ -31,6 +31,8 @@ import {
   studentDetail,
 } from "../admin/repo";
 import { requireStaff, type AdminEnv, type RequireStaffOptions } from "../admin/staff";
+import type { Mailer } from "../mail";
+import { notifyAccessGranted } from "../mail/notify";
 import { approveOrder, createPendingOrder, rejectOrder } from "../orders/repo";
 
 // Every /api/admin/* route goes through requireStaff, then (for POST, PUT, PATCH, DELETE) the
@@ -63,9 +65,18 @@ async function readBody<S extends z.ZodType>(c: Context<AdminEnv>, schema: S): P
   return { ok: false, response: c.json(error("invalid_request", fields), 422) };
 }
 
-export function createAdmin(options?: RequireStaffOptions) {
+export interface AdminOptions extends RequireStaffOptions {
+  /** Used when the parent app has not put a mailer on the context (tests, standalone use). */
+  mailer?: Mailer;
+}
+
+export function createAdmin(options?: AdminOptions) {
   return (
     new Hono<AdminEnv>()
+      .use("*", async (c, next) => {
+        if (options?.mailer && !c.var.mailer) c.set("mailer", options.mailer);
+        await next();
+      })
       .use("*", requireStaff(undefined, options))
       .use("*", requireSameOriginJson)
       .get("/me", (c) => c.json(c.get("staff")))
@@ -108,6 +119,13 @@ export function createAdmin(options?: RequireStaffOptions) {
         });
         if (!result.ok) {
           return c.json(error(result.error), result.error === "not_found" ? 404 : 409);
+        }
+        // Fresh grant only, so a repeat approve sends nothing. notifyAccessGranted never throws.
+        const mailer = c.var.mailer;
+        if (result.value.granted && mailer) {
+          await notifyAccessGranted(c.env, mailer, result.value.order.id, {
+            waitUntil: c.var.waitUntil,
+          });
         }
         return c.json({
           order: await getAdminOrder(c.env.DB, result.value.order.id),

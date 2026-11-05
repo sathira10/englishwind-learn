@@ -5,6 +5,8 @@ import { createKeyProvider, type Jwk } from "../../src/worker/admin/access";
 import { attachOrder } from "../../src/worker/admin/repo";
 import { createPendingOrder } from "../../src/worker/orders/repo";
 import { createAdmin } from "../../src/worker/routes/admin";
+import type { Mailer } from "../../src/worker/mail";
+import { captureMailer } from "./capture-mailer";
 
 // Plan 09 (admin API). Real D1; Access tokens are signed with a generated RSA key the way
 // tests/unit/admin-access.test.ts does. These cases mirror plan 09's reference table (R1 to R11)
@@ -47,12 +49,12 @@ async function tokenFor(email: string) {
   return `${input}.${b64url(sig)}`;
 }
 
-function app() {
+function app(mailer?: Mailer) {
   const keys = createKeyProvider(
     async () => [jwk],
     () => NOW_MS,
   );
-  return createAdmin({ keys });
+  return createAdmin({ keys, mailer });
 }
 
 const admin = app();
@@ -62,6 +64,7 @@ interface CallOptions {
   body?: unknown;
   raw?: string;
   headers?: Record<string, string | null>; // null removes a default header
+  app?: ReturnType<typeof createAdmin>; // defaults to the shared app without a mailer
 }
 
 async function call(method: string, path: string, options: CallOptions = {}) {
@@ -80,7 +83,10 @@ async function call(method: string, path: string, options: CallOptions = {}) {
     method === "GET"
       ? undefined
       : (options.raw ?? (options.body === undefined ? undefined : JSON.stringify(options.body)));
-  return admin.fetch(new Request(`${ORIGIN}${path}`, { method, headers, body }), bindings);
+  return (options.app ?? admin).fetch(
+    new Request(`${ORIGIN}${path}`, { method, headers, body }),
+    bindings,
+  );
 }
 
 const json = async <T = Record<string, unknown>>(res: Response) => (await res.json()) as T;
@@ -326,6 +332,30 @@ describe("orders", () => {
       new Date(grant.starts_at + 19_800_000).getUTCFullYear() + 3,
     );
     expect(grant.created_by).toBe("amma@example.com");
+  });
+
+  it("emails the student once when access is approved, and not on a repeat approve", async () => {
+    const mailer = captureMailer();
+    const withMail = app(mailer);
+    const buyer = email();
+    const order = await pendingOrder("blueprint", buyer);
+    const first = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: withMail });
+    expect(first.status).toBe(200);
+    expect(mailer.accessGranted_).toHaveLength(1);
+    expect(mailer.accessGranted_[0]!.to).toBe(buyer);
+
+    const second = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: withMail });
+    expect(second.status).toBe(200);
+    expect(mailer.accessGranted_).toHaveLength(1);
+  });
+
+  it("still approves when the mailer throws", async () => {
+    const mailer = captureMailer({ failWith: new Error("smtp down") });
+    const order = await pendingOrder();
+    const res = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: app(mailer) });
+    expect(res.status).toBe(200);
+    expect(await json(res)).toMatchObject({ granted: true, order: { status: "approved" } });
+    expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(1);
   });
 
   it("approves with no body at all", async () => {
