@@ -10,7 +10,7 @@ async function sha256Hex(text: string) {
  * Per-address cap on login-code sends, kept in `rate_limits` beside Better Auth's per-IP rows.
  * The key holds a hash, never the address. One upsert statement, so concurrent requests cannot
  * both slip under the cap. Fixed window: `last_request` is when the window started.
- * Returns false when the address has used up its sends.
+ * Returns false when the address has used up its sends; that path writes nothing.
  */
 export async function consumeEmailSend(db: D1Database, email: string, now = Date.now()) {
   const key = `otp-email:${await sha256Hex(normalizeEmail(email))}`;
@@ -22,9 +22,12 @@ export async function consumeEmailSend(db: D1Database, email: string, now = Date
        ON CONFLICT(key) DO UPDATE SET
          count = CASE WHEN last_request <= ?4 THEN 1 ELSE count + 1 END,
          last_request = CASE WHEN last_request <= ?4 THEN ?3 ELSE last_request END
+       WHERE last_request <= ?4 OR count < ?5
        RETURNING count`,
     )
-    .bind(crypto.randomUUID(), key, now, windowStart)
+    .bind(crypto.randomUUID(), key, now, windowStart, max)
     .first<{ count: number }>();
-  return (row?.count ?? 1) <= max;
+  // An address already at its cap matches no row: nothing is written and nothing returned, so a
+  // flood of requests for one address costs reads, not writes.
+  return row !== null && row.count <= max;
 }

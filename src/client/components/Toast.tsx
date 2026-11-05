@@ -31,7 +31,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: number) => void }) {
-  const [paused, setPaused] = useState(false);
+  // Hover and focus are tracked apart: leaving one must not restart the timer while the other holds.
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const paused = hovered || focused;
 
   useEffect(() => {
     if (paused) return;
@@ -43,10 +46,10 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
     <div
       className="app-toast flex items-center justify-between gap-4 bg-surface-dark py-2 pl-4 pr-2 text-fg-on-dark"
       data-surface="navy"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
     >
       <p className="m-0 min-w-0 flex-1 text-base">{item.message}</p>
       <Button
