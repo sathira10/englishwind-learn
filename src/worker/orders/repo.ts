@@ -227,7 +227,7 @@ export async function approveOrder(
       .prepare(
         `INSERT INTO grants (id, student_id, course_id, order_id, starts_at, ends_at, created_by, created_at)
          SELECT ?, o.student_id, ?, o.id, ?, ?, ?, ? FROM orders o
-         WHERE o.id = ? AND o.student_id IS NOT NULL AND changes() > 0`,
+         WHERE o.id = ? AND changes() > 0`,
       )
       .bind(
         crypto.randomUUID(),

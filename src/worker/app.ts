@@ -4,9 +4,11 @@ import { consumeEmailSend } from "./auth/email-limit";
 import type { AppEnv } from "./auth/require-student";
 import { mailerFromEnv, type Mailer } from "./mail";
 import { admin } from "./routes/admin";
+import { courseRoutes } from "./routes/courses";
 import { health } from "./routes/health";
 import { me } from "./routes/me";
 import { offers, orders } from "./routes/orders";
+import { worksheets } from "./routes/worksheets";
 
 export interface AppOptions {
   /** Tests pass a capturing mailer; otherwise MAIL_DRIVER picks one. */
@@ -52,6 +54,8 @@ export function createApp(options: AppOptions = {}) {
   app.route("/me", me);
   app.route("/orders", orders);
   app.route("/offers", offers);
+  app.route("/courses", courseRoutes);
+  app.route("/worksheets", worksheets);
   app.route("/admin", admin);
   app.notFound((c) => c.json({ error: "not_found" }, 404));
   return app;

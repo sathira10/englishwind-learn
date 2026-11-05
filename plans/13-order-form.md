@@ -52,6 +52,9 @@ Sathira's copy in `tests/reference/` (Q10).
 - [ ] Whatever the body says, the stored amount equals the offer's price (approved: no)
 - [ ] However many times approve runs, an order has at most one grant (approved: no)
 
+The caps can be got round by rotating through an IPv6 /64 and by Gmail address aliases; this is
+accepted for launch, because a fake order is only a pending row that Amma rejects.
+
 ### Out of scope
 
 - Admin screens and routes that call approve and reject (slice 09).

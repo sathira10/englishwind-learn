@@ -4,7 +4,8 @@ import { EMAIL_SEND_LIMIT } from "./create-auth";
 
 /**
  * Per-address cap on login-code sends, kept in `rate_limits` beside Better Auth's per-IP rows.
- * The key holds a hash, never the address. Returns false when the address has used up its sends.
+ * The key holds a hash, never the address. Returns false when the address has used up its sends;
+ * that path writes nothing (see `consumeLimit`).
  */
 export async function consumeEmailSend(db: D1Database, email: string, now = Date.now()) {
   const key = `otp-email:${await sha256Hex(normalizeEmail(email))}`;

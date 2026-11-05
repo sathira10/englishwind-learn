@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { isValidReference } from "../../src/domain/orders";
 import { BANK_DETAILS } from "../../src/shared/bank";
 import { createApp } from "../../src/worker/app";
+import { sha256Hex } from "../../src/worker/rate-limit";
 
 // Plan 13 (order API). Real D1 and the real Hono app. These cases mirror plan 13's reference
 // table (R1 to R4) pending Sathira's copy in tests/reference/. Rate limits key on IP and email,
@@ -129,6 +130,20 @@ describe("POST /api/orders", () => {
     for (let i = 0; i < 10; i++) expect((await post(valid(), { ip })).status).toBe(201);
     expect((await post(valid(), { ip })).status).toBe(429);
     expect((await post(valid())).status).toBe(201); // another IP is unaffected
+  });
+
+  it("writes nothing for an IP already at its cap", async () => {
+    const ip = freshIp();
+    for (let i = 0; i < 10; i++) expect((await post(valid(), { ip })).status).toBe(201);
+    const key = `order-ip:${await sha256Hex(ip)}`;
+    const read = () =>
+      env.DB.prepare("SELECT count, last_request FROM rate_limits WHERE key = ?")
+        .bind(key)
+        .first<{ count: number; last_request: number }>();
+    const before = await read();
+    expect(before?.count).toBe(10);
+    for (let i = 0; i < 3; i++) expect((await post(valid(), { ip })).status).toBe(429);
+    expect(await read()).toEqual(before);
   });
 
   it("limits each email to 5 orders an hour, whatever the case", async () => {
