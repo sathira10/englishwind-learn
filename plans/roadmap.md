@@ -34,6 +34,7 @@ up for review, so that Sathira's review and the staging checks fit the remaining
 | 10  | Emails: login code, order received with transfer instructions, access granted                                                                       | 03, 13, 09 | 12 Nov | Delivery checked on Gmail, Yahoo and the providers students use                     |
 | 11  | Operations: daily D1 export and R2 copy outside Cloudflare, one restore done                                                                        | 01         | 12 Nov | Restore rehearsed and written down                                                  |
 | 12  | Migration: 5 existing buyers imported with 3 years from their original dates                                                                        | 02, 04     | 13 Nov | All 5 sign in on the new app                                                        |
+| 14  | App components: button, dialog, toast, list row, empty state, status label, lesson-complete mark, Vimeo frame, 3:1 text field                       | 00         | 9 Nov  | Every component shown at /dev/components passes the design rules at 375px           |
 
 13 is new on 5 Nov: the launch plan puts a bank-transfer order form on the public site, and its
 API has to live here. ADR 0007 puts the form itself on the app's host too. The public site's

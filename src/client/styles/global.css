@@ -61,3 +61,65 @@
   --container-narrow: var(--container-narrow);
   --container-measure: var(--measure);
 }
+
+/* App-level values. Where an existing token fits, these point at it. Nothing here is a colour
+   except the dialog scrim, which is the surface-dark token with transparency (OPEN-QUESTIONS Q25).
+   Plan 14: these should move into design-system/tokens.json upstream in englishwind-web; do not
+   add them to tokens.css, which is generated. */
+:root {
+  --dialog-max: 28rem;
+  --toast-max: 26rem;
+  --row-min: var(--tap-min);
+  --radius-control: var(--radius-sm);
+  --shadow-overlay: none; /* the design system has no shadows: overlays get a 1px line border */
+  --overlay-scrim: color-mix(in srgb, var(--surface-dark) 60%, transparent);
+}
+
+@layer components {
+  /* Native dialog, opened with showModal(): the browser traps focus and handles Esc. */
+  .app-dialog {
+    box-sizing: border-box;
+    width: min(var(--dialog-max), calc(100% - 2 * var(--space-4)));
+    max-height: calc(100% - 2 * var(--space-4));
+    margin: auto;
+    padding: var(--panel-space);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-overlay);
+    background: var(--bg);
+    color: var(--fg);
+    overflow-y: auto;
+  }
+  .app-dialog::backdrop {
+    background: var(--overlay-scrim);
+  }
+  @media (min-width: 64rem) {
+    .app-dialog {
+      padding: var(--panel-space-lg);
+    }
+  }
+
+  /* Toasts sit in one always-present live region at the bottom of the viewport. */
+  .app-toast-region {
+    position: fixed;
+    inset-inline: var(--space-4);
+    bottom: var(--space-4);
+    z-index: 50;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    pointer-events: none;
+  }
+  .app-toast {
+    pointer-events: auto;
+    box-sizing: border-box;
+    width: min(100%, var(--toast-max));
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .ew-btn[aria-busy="true"] {
+    cursor: progress;
+  }
+}
