@@ -30,9 +30,15 @@ export function createApp(options: AppOptions = {}) {
       // No execution context (some test callers): background work is awaited instead.
     }
     // Picked on first send, so a bad MAIL_DRIVER fails the send and not every request.
+    const pick = () => options.mailer ?? mailerFromEnv(c.env);
     const mailer: Mailer = {
-      sendLoginCode: (to, code) => (options.mailer ?? mailerFromEnv(c.env)).sendLoginCode(to, code),
+      sendLoginCode: (to, code) => pick().sendLoginCode(to, code),
+      orderReceived: (to, data) => pick().orderReceived(to, data),
+      accessGranted: (to, data) => pick().accessGranted(to, data),
+      orderRejected: (to, data) => pick().orderRejected(to, data),
     };
+    c.set("mailer", mailer);
+    c.set("waitUntil", waitUntil);
     c.set("auth", createAuth(c.env, { mailer, waitUntil }));
     await next();
   });

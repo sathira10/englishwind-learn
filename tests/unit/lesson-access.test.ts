@@ -1,3 +1,4 @@
+import { captureMailer } from "./capture-mailer";
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import { course as blueprint } from "../../content/courses/blueprint.ts";
@@ -21,6 +22,7 @@ let counter = 0;
 
 const sent: { to: string; code: string }[] = [];
 const mailer: Mailer = {
+  ...captureMailer(),
   async sendLoginCode(to, code) {
     sent.push({ to, code });
   },

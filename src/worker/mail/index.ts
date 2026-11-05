@@ -2,7 +2,8 @@ import { createCloudflareMailer } from "./cloudflare";
 import { createConsoleMailer } from "./console";
 import type { Mailer } from "./mailer";
 
-export type { Mailer } from "./mailer";
+export type { AccessGrantedData, Mailer, OrderReceivedData, OrderRejectedData } from "./mailer";
+export { notifyAccessGranted, sendSafely, signInUrl } from "./notify";
 
 /** Picks the sender from MAIL_DRIVER. The console sender prints login codes, so it refuses to
  *  run on a public https host. */
