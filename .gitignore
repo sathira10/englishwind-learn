@@ -20,3 +20,4 @@ reports/
 *.local.md
 *.local.json
 .claude/settings.local.json
+.stryker-tmp/
