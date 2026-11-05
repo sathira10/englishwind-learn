@@ -49,6 +49,10 @@ export function createApp(options: AppOptions = {}) {
     return c.var.auth.handler(c.req.raw);
   });
   app.on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw));
+  // Tells the sign-in screen whether to show the Google button (Q5). No secret leaves the server.
+  app.get("/sign-in-options", (c) =>
+    c.json({ google: Boolean(c.env.GOOGLE_CLIENT_ID && c.env.GOOGLE_CLIENT_SECRET) }),
+  );
   app.route("/health", health);
   app.route("/me", me);
   app.route("/courses", courseRoutes);
