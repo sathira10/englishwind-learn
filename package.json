@@ -30,6 +30,7 @@
     "deploy:production": "CLOUDFLARE_ENV=production vite build && wrangler d1 migrations apply DB --remote --env production && wrangler deploy"
   },
   "dependencies": {
+    "better-auth": "^1.7.17",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.16",
     "react": "^19.3.1",

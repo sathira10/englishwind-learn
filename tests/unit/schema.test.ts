@@ -71,7 +71,10 @@ describe("schema", () => {
     ]) {
       expect(names).toContain(table);
     }
-    expect(names).not.toContain("rate_limits");
+    // Auth tables (plan 03) sit beside them.
+    for (const table of ["users", "sessions", "accounts", "verifications", "rate_limits"]) {
+      expect(names).toContain(table);
+    }
   });
 
   it("seeds the blueprint course with 3 years of access", async () => {
