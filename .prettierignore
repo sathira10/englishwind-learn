@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+dist
+.wrangler
+src/db/migrations
+design-system
+worker-configuration.d.ts
+worker-configuration.d.ts
+CLAUDE.local.md

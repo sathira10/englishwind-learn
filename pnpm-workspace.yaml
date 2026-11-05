@@ -1,0 +1,7 @@
+# Single package, not a workspace. pnpm reads its settings from this file.
+# Dependencies allowed to run install scripts; everything else is blocked.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  # Cloudflare's local runtime, needed by `wrangler dev`.
+  workerd: true

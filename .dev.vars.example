@@ -1,0 +1,2 @@
+# Local secrets for `pnpm dev`. Copy to .dev.vars. Nothing here yet; auth and email secrets
+# arrive with their slices. Staging and production secrets are set with `wrangler secret put`.

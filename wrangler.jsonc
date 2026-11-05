@@ -1,0 +1,55 @@
+// One Worker serves the SPA and the API (docs/adr/0002-one-worker.md).
+// Assets are served without running the Worker, except /api/*. Unknown paths get index.html so
+// client routes work on reload. Never put protected files in public/: they would be served to
+// anyone (docs/adr/0004-access-control.md).
+// The bare config is local development only. Staging and production are separate Workers with
+// their own D1, R2 and secrets, picked at build time with CLOUDFLARE_ENV (docs/deploying.md).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "englishwind-learn-dev",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "englishwind-learn-dev",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "src/db/migrations",
+    },
+  ],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files-dev" }],
+  "env": {
+    "staging": {
+      "name": "englishwind-learn-staging",
+      // FILL: route for the staging host.
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "englishwind-learn-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "migrations_dir": "src/db/migrations",
+        },
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files-staging" }],
+    },
+    "production": {
+      "name": "englishwind-learn",
+      // FILL: "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }]
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "englishwind-learn",
+          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "migrations_dir": "src/db/migrations",
+        },
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files" }],
+    },
+  },
+}
