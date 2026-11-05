@@ -5,18 +5,20 @@ import { ButtonLink } from "../components/ButtonLink";
 import { EmptyState } from "../components/EmptyState";
 import { ListRow, ListRows } from "../components/ListRow";
 import { useLoad } from "../use-load";
-import { ErrorScreen, Loading, ORDER_PATH, Shell, UnverifiedScreen } from "./Shell";
+import { ErrorScreen, Loading, ORDER_PATH, PageHeading, Shell, UnverifiedScreen } from "./Shell";
 
 export function MyCourses() {
   const load = useLoad("courses", () => getJson("/api/courses", myCoursesResponse));
   return (
     <Shell>
-      <h1 className="m-0 mb-6 font-display text-h2 font-bold text-fg-strong">My courses</h1>
+      <div className="mb-6">
+        <PageHeading>My courses</PageHeading>
+      </div>
       {load.state === "loading" ? <Loading /> : null}
       {load.state === "ready" ? <MyCoursesList courses={load.data.courses} /> : null}
-      {load.state === "unverified" ? <UnverifiedScreen /> : null}
+      {load.state === "unverified" ? <UnverifiedScreen level={2} /> : null}
       {load.state === "error" || load.state === "not_found" || load.state === "no_access" ? (
-        <ErrorScreen onRetry={load.reload} />
+        <ErrorScreen onRetry={load.reload} level={2} />
       ) : null}
     </Shell>
   );

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
-import { lessonLabel } from "../../domain/student-screens";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { lessonLabel, signInUrl } from "../../domain/student-screens";
 import { lessonResponse, progressResponse, type LessonResponse } from "../../shared/access";
-import { getJson, postJson } from "../api";
+import { ApiError, getJson, postJson } from "../api";
 import { Button } from "../components/Button";
 import { ButtonLink } from "../components/ButtonLink";
 import { LessonCompleteMark } from "../components/LessonCompleteMark";
@@ -14,6 +14,7 @@ import {
   Loading,
   NoAccessScreen,
   NotFoundScreen,
+  PageHeading,
   Shell,
   UnverifiedScreen,
 } from "./Shell";
@@ -26,10 +27,17 @@ export function LessonPage() {
   // Record the visit once the lesson has loaded, so "continue where you left off" finds it.
   // Only a loaded lesson counts: a student without access writes nothing.
   const ready = load.state === "ready";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const here = location.pathname + location.search;
   useEffect(() => {
     if (!ready) return;
-    postJson(`${base}/visit`, progressResponse).catch(() => undefined);
-  }, [ready, base]);
+    postJson(`${base}/visit`, progressResponse).catch((err: unknown) => {
+      // The session ended while the lesson was open: sign in again and come back.
+      if (err instanceof ApiError && err.status === 401)
+        navigate(signInUrl(here), { replace: true });
+    });
+  }, [ready, base, here, navigate]);
 
   return (
     <Shell>
@@ -49,6 +57,8 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
   const { view, progress } = data;
   const { lesson } = view;
   const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const [completedNow, setCompletedNow] = useState(false);
@@ -62,7 +72,11 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
       await postJson(`${base}/complete`, progressResponse);
       setCompletedNow(true);
       toast.show("Lesson marked complete.");
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        navigate(signInUrl(location.pathname + location.search), { replace: true });
+        return;
+      }
       setFailed(true);
     } finally {
       setSaving(false);
@@ -80,7 +94,7 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
           {view.moduleLabel}: {view.moduleName}
           {lesson.number !== null ? ` · ${lessonLabel(lesson.number)}` : ""}
         </p>
-        <h1 className="m-0 font-display text-h2 font-bold text-fg-strong">{lesson.title}</h1>
+        <PageHeading>{lesson.title}</PageHeading>
       </div>
 
       <VimeoFrame

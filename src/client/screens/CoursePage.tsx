@@ -16,6 +16,7 @@ import {
   Loading,
   NoAccessScreen,
   NotFoundScreen,
+  PageHeading,
   Shell,
   UnverifiedScreen,
 } from "./Shell";
@@ -46,7 +47,7 @@ export function CourseOutline({ data }: { data: CourseResponse }) {
   return (
     <div className="grid gap-8">
       <div className="grid gap-4">
-        <h1 className="m-0 font-display text-h2 font-bold text-fg-strong">{course.title}</h1>
+        <PageHeading>{course.title}</PageHeading>
         <p className="m-0 max-w-measure text-body text-fg">{course.intro}</p>
         <p className="m-0 text-base text-fg-muted">
           {count.done} of {count.total} lessons complete. Access until{" "}

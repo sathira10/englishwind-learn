@@ -65,11 +65,29 @@ export function completionCount(
  * student elsewhere. Anything else, and the sign-in page itself, becomes "/".
  */
 export function safeReturnTo(value: string | null | undefined): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+  if (!value || !value.startsWith("/")) return "/";
+  // Control characters and spaces are stripped by browsers inside URLs ("/\t/evil" becomes
+  // "//evil"), so refuse them instead of trying to predict that.
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x20\x7f\\]/.test(value)) return "/";
+  let url: URL;
+  try {
+    url = new URL(value, "https://x.invalid");
+  } catch {
     return "/";
   }
-  if (value === "/sign-in" || value.startsWith("/sign-in?")) return "/";
-  return value;
+  if (url.origin !== "https://x.invalid") return "/";
+  // Look at the decoded path too: "/%09/evil" must not turn into "//evil" further along.
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(url.pathname);
+  } catch {
+    return "/";
+  }
+  // eslint-disable-next-line no-control-regex
+  if (decoded.startsWith("//") || /[\x00-\x20\x7f\\]/.test(decoded)) return "/";
+  if (url.pathname === "/sign-in") return "/";
+  return url.pathname + url.search + url.hash;
 }
 
 /** The sign-in URL that comes back to `path` afterwards. */

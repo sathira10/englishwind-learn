@@ -5,6 +5,22 @@ import { ButtonLink } from "../components/ButtonLink";
 import { EmptyState } from "../components/EmptyState";
 import { postRaw } from "../api";
 
+/**
+ * The page's h1. It takes focus when it appears, so after a route change a keyboard or screen
+ * reader user starts at the new page's title. Screens remount it per page (and per lesson).
+ */
+export function PageHeading({ children }: { children: ReactNode }) {
+  return (
+    <h1
+      tabIndex={-1}
+      ref={(el) => el?.focus({ preventScroll: true })}
+      className="m-0 font-display text-h2 font-bold text-fg-strong"
+    >
+      {children}
+    </h1>
+  );
+}
+
 /** The page frame: a slim header and a centred column. Mobile first; text never under 16px. */
 export function Shell({ children, signedIn = true }: { children: ReactNode; signedIn?: boolean }) {
   const navigate = useNavigate();
@@ -56,12 +72,13 @@ export function Loading() {
 /** The one place a course order starts at launch (plan 13). */
 export const ORDER_PATH = "/order/blueprint";
 
-export function NoAccessScreen() {
+export function NoAccessScreen({ level = 1 }: { level?: 1 | 2 }) {
   return (
     <div className="max-w-measure">
       <EmptyState
         title="You don't have access to this course"
-        headingLevel={2}
+        headingLevel={level}
+        focusHeading
         action={
           <div className="flex flex-wrap gap-4">
             <ButtonLink to={ORDER_PATH}>Order the Blueprint course</ButtonLink>
@@ -78,12 +95,13 @@ export function NoAccessScreen() {
   );
 }
 
-export function NotFoundScreen() {
+export function NotFoundScreen({ level = 1 }: { level?: 1 | 2 }) {
   return (
     <div className="max-w-measure">
       <EmptyState
         title="That page isn't here"
-        headingLevel={2}
+        headingLevel={level}
+        focusHeading
         action={<ButtonLink to="/">My courses</ButtonLink>}
       >
         Nothing is wrong with your course access.
@@ -92,12 +110,13 @@ export function NotFoundScreen() {
   );
 }
 
-export function UnverifiedScreen() {
+export function UnverifiedScreen({ level = 1 }: { level?: 1 | 2 }) {
   return (
     <div className="max-w-measure">
       <EmptyState
         title="Confirm your email first"
-        headingLevel={2}
+        headingLevel={level}
+        focusHeading
         action={<ButtonLink to="/sign-in">Sign in with an email code</ButtonLink>}
       >
         Your email address isn't confirmed yet. Signing in with the 6-digit code we email you
@@ -107,12 +126,13 @@ export function UnverifiedScreen() {
   );
 }
 
-export function ErrorScreen({ onRetry }: { onRetry?: () => void }) {
+export function ErrorScreen({ onRetry, level = 1 }: { onRetry?: () => void; level?: 1 | 2 }) {
   return (
     <div className="max-w-measure">
       <EmptyState
         title="That didn't load"
-        headingLevel={2}
+        headingLevel={level}
+        focusHeading
         action={onRetry ? <Button onClick={onRetry}>Try again</Button> : undefined}
       >
         Check your connection and try again. Your progress is saved.

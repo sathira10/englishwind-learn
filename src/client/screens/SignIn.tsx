@@ -6,7 +6,7 @@ import { ApiError, getJson, postRaw } from "../api";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { signInMessages, type SignInProblem } from "./sign-in-messages";
-import { Shell } from "./Shell";
+import { PageHeading, Shell } from "./Shell";
 
 const optionsSchema = z.object({ google: z.boolean() });
 
@@ -22,6 +22,8 @@ export function SignIn() {
   const [problem, setProblem] = useState<SignInProblem | null>(
     params.get("error") ? "google_failed" : null,
   );
+  // Focus the email field only when coming back to it; on first load the h1 has focus.
+  const [returned, setReturned] = useState(false);
   const [google, setGoogle] = useState(false);
 
   // The Google button shows only when the server has the keys (plan 03, Q5).
@@ -107,7 +109,7 @@ export function SignIn() {
   return (
     <Shell signedIn={false}>
       <div className="mx-auto grid max-w-md gap-6">
-        <h1 className="m-0 font-display text-h2 font-bold text-fg-strong">Sign in</h1>
+        <PageHeading>Sign in</PageHeading>
 
         {step === "email" ? (
           <form onSubmit={sendCode} className="grid gap-6">
@@ -121,6 +123,7 @@ export function SignIn() {
               autoComplete="email"
               inputMode="email"
               required
+              autoFocus={returned}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -142,6 +145,7 @@ export function SignIn() {
               inputMode="numeric"
               pattern="[0-9]{6}"
               maxLength={7}
+              autoFocus
               required
               value={code}
               onChange={(e) => setCode(cleanCode(e.target.value))}
@@ -163,6 +167,7 @@ export function SignIn() {
                 variant="secondary"
                 onClick={() => {
                   setStep("email");
+                  setReturned(true);
                   setProblem(null);
                 }}
               >
