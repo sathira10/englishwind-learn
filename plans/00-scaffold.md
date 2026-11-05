@@ -152,3 +152,17 @@ Sathira approved the plan with its defaults:
 2. About 8 hours a week, with Claude writing most code.
 3. The order form is the main Blueprint button and WhatsApp is the help route (site slice only).
 4. No model log in the repo.
+
+## As built (6 Nov)
+
+- `@cloudflare/vitest-pool-workers` turned out to be deprecated; the repo uses its replacement,
+  `@cloudflare/vitest-plugin`, with Vitest 5.
+- `tests/reference/` holds only its README. A health-contract case written by an agent would
+  have broken the rule it exists for, so the health check is covered by `tests/unit/` and the
+  e2e smoke test, and the first reference cases come with slice 02 from Sathira.
+- The guard was checked in a throwaway clone: an uncommitted change, the hook without the trailer,
+  and a range containing a commit without it all fail; the hook with the trailer passes. Claude's
+  deny rules also blocked a shell redirect into the folder in this repo.
+- `wrangler types` writes `worker-configuration.d.ts`, which is committed; `pnpm typecheck` fails
+  if it is out of date with `wrangler.jsonc`.
+- Added `.github/CODEOWNERS` for `tests/reference/` and `docs/deploying.md`.

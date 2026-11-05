@@ -16,7 +16,7 @@ rules) are the definition of correct, so they need to stay as Sathira wrote them
 ## Consequences
 
 - Accidental edits and Claude's edit tools are blocked.
-- An agent using the shell could still write the trailer itself. The trailer is added only by
-  Sathira, and CODEOWNERS on `tests/reference/` makes GitHub enforce review once there is a
-  remote.
+- Some routes stay open: a script that writes the file, or an agent that writes the trailer
+  itself. The trailer is added only by Sathira, and `.github/CODEOWNERS` makes GitHub require
+  Sathira's review once there is a remote.
 - A wrong reference case is fixed by Sathira, never worked around.

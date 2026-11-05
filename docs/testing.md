@@ -15,14 +15,16 @@ Three layers, from most trusted to least.
 Agents change tests to make them pass. The reference cases are the answers, so agents can't
 edit them:
 
-- `.claude/settings.json` denies Claude's file tools in `tests/reference/`.
+- `.claude/settings.json` denies Claude's file tools in `tests/reference/`. The same rules also
+  stopped a shell redirect into the folder when tried on 6 Nov, and they deny
+  `git commit --no-verify` and changing `core.hooksPath`.
 - `scripts/check-reference.mjs` refuses a commit that touches `tests/reference/` unless its
   message has a `Reference-Approved: Sathira` trailer. The `commit-msg` hook runs it locally,
   and CI runs it on every pushed commit.
 
-That stops accidents and Claude's own edit tools. It can't stop an agent that uses the shell and
-writes the trailer itself, so only add the trailer yourself, and add CODEOWNERS for
-`tests/reference/` once the repo has a GitHub remote. See ADR 0006.
+That stops accidents and Claude's usual ways in. It can't stop every route (a script that writes
+the file, or an agent that writes the trailer itself), so only add the trailer yourself.
+`.github/CODEOWNERS` makes GitHub require your review once there is a remote. See ADR 0006.
 
 If an agent thinks a reference case is wrong, it stops and says so. It does not change the case
 or the code around it to get past it.
