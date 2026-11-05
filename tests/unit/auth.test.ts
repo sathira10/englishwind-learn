@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { requireStudent, type AppEnv } from "../../src/worker/auth/require-student";
 import { createApp } from "../../src/worker/app";
 import { linkStudent } from "../../src/worker/auth/link-student";
+import { consumeEmailSend } from "../../src/worker/auth/email-limit";
+import { EMAIL_SEND_LIMIT } from "../../src/worker/auth/create-auth";
 import { createConsoleMailer } from "../../src/worker/mail/console";
 import { mailerFromEnv, type Mailer } from "../../src/worker/mail";
 
@@ -308,6 +310,29 @@ describe("rate limits", () => {
     ).all<{ key: string }>();
     expect(rows.results.length).toBeGreaterThan(0);
     for (const { key } of rows.results) expect(key).not.toContain("flood-");
+  });
+
+  it("writes nothing for an address already at its cap, and resets after the window", async () => {
+    const email = `cap-${unique()}@example.lk`;
+    const t0 = 1_800_000_000_000;
+    const { max, window } = EMAIL_SEND_LIMIT;
+    for (let i = 0; i < max; i++) expect(await consumeEmailSend(env.DB, email, t0 + i)).toBe(true);
+    const before = await env.DB.prepare(
+      "SELECT count, last_request FROM rate_limits WHERE key LIKE 'otp-email:%' AND last_request = ?",
+    )
+      .bind(t0)
+      .first<{ count: number }>();
+    expect(before?.count).toBe(max);
+    for (let i = 0; i < 3; i++) {
+      expect(await consumeEmailSend(env.DB, email, t0 + 100 + i)).toBe(false);
+    }
+    const after = await env.DB.prepare(
+      "SELECT count FROM rate_limits WHERE key LIKE 'otp-email:%' AND last_request = ?",
+    )
+      .bind(t0)
+      .first<{ count: number }>();
+    expect(after?.count).toBe(max);
+    expect(await consumeEmailSend(env.DB, email, t0 + window * 1000 + 1)).toBe(true);
   });
 
   it("answers 429 the same way for an address with no account", async () => {
