@@ -11,6 +11,7 @@
     "src/shared",
     "src/domain",
     "src/db",
+    "content",
     "tests/unit",
     "tests/reference",
     "tests/setup.ts",
