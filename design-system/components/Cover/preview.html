@@ -1,0 +1,50 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EnglishWind</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg-strong); font-family:var(--font-body); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; }
+  .art svg { display:block; }
+  .band { fill:var(--surface-dark); }
+  .band2 { fill:var(--surface-dark-alt); }
+  .tint { fill:var(--surface); }
+  .hl { fill:var(--highlight); }
+  .glyph { fill:var(--fg-on-dark); }
+  .blk { rx:var(--radius-sm); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-weight:700; font-size:64px; line-height:.95; letter-spacing:-0.035em; color:var(--fg-strong); }
+  .tag { margin:var(--space-2) 0 0 2px; font-size:14px; line-height:20px; color:var(--fg-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      surface-dark 160x288 slab bleeding off top, bottom and right (the navy bands, largest) · surface-dark-alt 128x232 · surface 96x168 tint · highlight bar 180x20 once, inside the slab (its one job) — about 35% of 960x288
+  arrangement flush strip of unequal fields stepping in tone from page to navy, the way pages alternate bg, surface and navy bands, ending on the favicon
+  pattern     one oversized glyph: the E mark at 5x in fg-on-dark with the highlight bar beneath, clipped by the slab — the favicon's own composition, since the mark is the brand's only drawn shape
+  scales      gutters space-4 (16); block sides in space-2 multiples; corners radius-sm, the brand's maximum
+-->
+<defs><clipPath id="slab"><rect x="320" y="0" width="160" height="288"/></clipPath></defs>
+<rect class="tint blk" x="32" y="120" width="96" height="176" rx="2"/>
+<rect class="band2 blk" x="144" y="56" width="160" height="240" rx="2"/>
+<rect class="band" x="320" y="0" width="160" height="288"/>
+<g clip-path="url(#slab)">
+<path class="glyph" transform="translate(260 -22) scale(5)" d="M14 14h30v7H22v8h19v7H22v8h22v7H14z"/>
+<rect class="hl" x="330" y="243" width="180" height="20"/>
+</g>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">EnglishWind</h1>
+<p class="tag">Learn how to learn English</p>
+</div>
+</div>
+</body>
+</html>

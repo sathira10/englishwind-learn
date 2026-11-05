@@ -1,0 +1,19 @@
+<!-- @dsCard group="Forms" height=130 subtitle="Single line" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>CopyField</title></head>
+<body>
+<div class="pv" style="max-width:480px">
+  <span class="ew-label" style="margin-bottom:8px">WhatsApp number</span>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);padding:12px">
+    <span class="ew-mono fg-strong">+94 77 640 8668</span>
+    <button class="ew-btn ew-btn-sm ew-btn-secondary" type="button" id="cp">Copy</button>
+  </div>
+</div>
+<script>
+document.getElementById('cp').addEventListener('click', function () {
+  var b = this; b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 2000);
+});
+</script>
+</body>
+</html>

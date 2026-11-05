@@ -1,1 +1,63 @@
 @import "tailwindcss";
+@import "../../../design-system/tokens.css";
+/* The shared ew-* treatments, in the base layer so Tailwind utilities can still adjust them. */
+@import "../../../design-system/components/bundle.css" layer(base);
+@source "../";
+
+/* Tailwind role mappings, taken from englishwind-web's src/styles/global.css. Colours point at
+   the tokens; there are no palette utilities. Text colours are fg-*, never text-*: Tailwind
+   reserves --text-* for sizes. */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-alt: var(--surface-dark-alt);
+  --color-nav: var(--nav);
+  --color-portrait: var(--portrait);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-strong: var(--fg-strong);
+  --color-fg-on-dark: var(--fg-on-dark);
+  --color-fg-on-dark-muted: var(--fg-on-dark-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-highlight: var(--highlight);
+  --color-highlight-fg: var(--highlight-fg);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --weight-display: 700;
+  --weight-display-2: 600;
+
+  /* Few sizes, far apart. Display sizes are fluid, so there is no breakpoint
+     to step them up at. */
+  --text-display-1: clamp(2.75rem, 1rem + 4.5vw, 5rem); /* 44 -> 80px */
+  --text-display-2: clamp(2rem, 1.2rem + 3.6vw, 4rem); /* 32 -> 64px */
+  --text-h2: clamp(2rem, 1.3rem + 2.4vw, 3rem); /* 32 -> 48px */
+  --text-h3: 1.5rem; /* 24px */
+  --text-h4: 1.5rem;
+  --text-body: 1.125rem; /* 18px reading size */
+  --text-base: 1rem; /* 16px, the floor */
+  --text-small: 0.875rem; /* 14px, copyright and legal asides only */
+  --text-data-lg: var(--text-display-2);
+
+  --leading-display: 0.98;
+  --leading-heading: 1.2;
+  --leading-body: 1.6;
+  --leading-relaxed: 1.7;
+
+  --tracking-display: -0.035em;
+  --tracking-heading: -0.015em;
+
+  --radius-sm: var(--radius-sm);
+  --container-page: var(--container-page);
+  --container-narrow: var(--container-narrow);
+  --container-measure: var(--measure);
+}

@@ -1,0 +1,5 @@
+# LessonRail
+
+The Blueprint's full syllabus, always open and full width. Each module is one row: on `lg` its band takes 3 of 12 columns and its lessons the other 9, three to a row inside the panel (two from `sm`, stacked below). The band is navy (`surface-dark`) with "Module N" in `fg-on-dark-muted`, the name as an `h3` and "N lessons · M min"; the orientation's band is `surface` and reads "Start here". A module's lessons share one `surface` panel, padded like the band beside it, across the remaining columns, unfilled inside, so a module of one or two lessons leaves no empty cells. Each lesson is its title in bold, then "Lesson N · M min" in `fg-muted`, then "Your action:" followed by the action it ends with.
+
+No props: module numbers, names, titles, runtimes and actions come from `lessons.ts`, and counts and minutes are derived from it, never typed. Module names carry no "Module N" prefix; the number is its own field. Lesson titles stay verbatim. Order is carried by position and by the words ("Lesson 8"), never by 01 / 02 / 03 markers or a hairline.

@@ -1,0 +1,27 @@
+<!-- @dsCard group="Forms" height=400 subtitle="With the validation notice" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SubscribeForm</title></head>
+<body>
+<div class="pv" style="max-width:640px">
+  <form class="pv-stack" onsubmit="event.preventDefault()">
+    <div style="display:grid;gap:8px">
+      <label class="ew-label" for="sf-name">Name</label>
+      <input class="ew-field" id="sf-name" type="text" autocomplete="off">
+    </div>
+    <div style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div style="display:grid;gap:8px">
+        <label class="ew-label" for="sf-email">Email address</label>
+        <input class="ew-field" id="sf-email" type="email" autocomplete="off">
+      </div>
+      <div style="display:grid;gap:8px">
+        <label class="ew-label" for="sf-wa">WhatsApp number</label>
+        <input class="ew-field" id="sf-wa" type="tel" autocomplete="off">
+      </div>
+    </div>
+    <p class="ew-notice" role="alert">Add an email address or a WhatsApp number. Either one works.</p>
+    <div><button class="ew-btn ew-btn-primary" type="submit">Subscribe</button></div>
+  </form>
+</div>
+</body>
+</html>
