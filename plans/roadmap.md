@@ -2,8 +2,8 @@
 
 5 November 2026. Baseline: `main` at `8b7bdc2` (scaffold, plan 00, done).
 
-Launch is **Monday 16 November 2026**: bank-transfer sales end to end, the 5 existing buyers
-learning on the new app. The order of slices follows the EnglishWind Launch Plan, cut so each
+Launch is **Monday 16 November 2026**: bank-transfer sales end to end. The 5 existing buyers
+are imported right after go-live (Q22). The order of slices follows the EnglishWind Launch Plan, cut so each
 one ships with its own tests. Each slice gets its own plan file and its own branch
 (`claude/slice-NN-name`) and PR into `main`. Slices that depend on an unmerged one branch from
 it, so their PRs stack; merge them in number order.
@@ -51,9 +51,9 @@ Things only Sathira can do, in the order the slices need them. Each is also a ro
    a staging host, and the Access application for `/admin`.
 3. 8 Nov: Google OAuth client, email sending domain, R2 upload of the 8 worksheets.
 4. 10 Nov: add the staging and production hosts to every Vimeo video's allowlist.
-5. 12–14 Nov: Amma's phone rehearsal, the 5 buyers' purchase dates, restore rehearsal.
+5. 12–14 Nov: Amma's phone rehearsal, restore rehearsal.
 6. 15–16 Nov: production deploy, DNS for learn.englishwind.lk, site button pointed at the order
-   form, sign-in message to the 5 buyers.
+   form. After go-live: import the 5 buyers (Q22) and send them the sign-in message.
 
 ### Cut line
 
