@@ -5,13 +5,14 @@ start a slice from its plan file, not from what they remember.
 
 ## Files
 
-| File                                   | Status                                       |
-| -------------------------------------- | -------------------------------------------- |
-| [00-scaffold.md](00-scaffold.md)       | Done: repo, toolchain, guards, CI            |
-| [01-data-model.md](01-data-model.md)   | Done: first D1 migration, seed, schema tests |
-| [roadmap.md](roadmap.md)               | Active: the slices to launch, in order       |
-| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Active: what needs Sathira, with defaults    |
-| [TEMPLATE.md](TEMPLATE.md)             | Copy for each new slice                      |
+| File                                   | Status                                         |
+| -------------------------------------- | ---------------------------------------------- |
+| [00-scaffold.md](00-scaffold.md)       | Done: repo, toolchain, guards, CI              |
+| [01-data-model.md](01-data-model.md)   | Done: first D1 migration, seed, schema tests   |
+| [03-auth.md](03-auth.md)               | In review: email code sign-in, Google optional |
+| [roadmap.md](roadmap.md)               | Active: the slices to launch, in order         |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) | Active: what needs Sathira, with defaults      |
+| [TEMPLATE.md](TEMPLATE.md)             | Copy for each new slice                        |
 
 ## How plans are written
 
