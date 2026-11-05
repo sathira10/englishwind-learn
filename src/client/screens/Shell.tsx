@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "../components/Button";
 import { ButtonLink } from "../components/ButtonLink";
@@ -10,12 +10,14 @@ import { postRaw } from "../api";
  * reader user starts at the new page's title. Screens remount it per page (and per lesson).
  */
 export function PageHeading({ children }: { children: ReactNode }) {
+  // Focus once on mount. An inline ref callback would run again on every re-render (a new
+  // function each time) and pull focus out of a field the student is typing in.
+  const ref = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    ref.current?.focus({ preventScroll: true });
+  }, []);
   return (
-    <h1
-      tabIndex={-1}
-      ref={(el) => el?.focus({ preventScroll: true })}
-      className="m-0 font-display text-h2 font-bold text-fg-strong"
-    >
+    <h1 tabIndex={-1} ref={ref} className="m-0 font-display text-h2 font-bold text-fg-strong">
       {children}
     </h1>
   );

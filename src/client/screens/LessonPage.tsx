@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { lessonLabel, signInUrl } from "../../domain/student-screens";
 import { lessonResponse, progressResponse, type LessonResponse } from "../../shared/access";
@@ -28,6 +28,7 @@ export function LessonPage() {
   // Only a loaded lesson counts: a student without access writes nothing.
   const ready = load.state === "ready";
   const navigate = useNavigate();
+
   const location = useLocation();
   const here = location.pathname + location.search;
   useEffect(() => {
@@ -58,6 +59,19 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
   const { lesson } = view;
   const toast = useToast();
   const navigate = useNavigate();
+
+  // A native link to the API would show raw JSON if the session expired after the lesson
+  // loaded. Check first with HEAD; on 401 go to sign-in and come back here.
+  async function downloadWorksheet(e: MouseEvent<HTMLAnchorElement>) {
+    const href = e.currentTarget.href;
+    e.preventDefault();
+    const res = await fetch(href, { method: "HEAD", credentials: "same-origin" }).catch(() => null);
+    if (res?.status === 401) {
+      navigate(signInUrl(window.location.pathname + window.location.search), { replace: true });
+      return;
+    }
+    window.location.assign(href);
+  }
   const location = useLocation();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -121,6 +135,7 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
                   className="ew-btn ew-btn-secondary ew-btn-outline"
                   href={`/api/worksheets/${encodeURIComponent(w.id)}`}
                   download
+                  onClick={(e) => void downloadWorksheet(e)}
                 >
                   Download: {w.label}
                 </a>
