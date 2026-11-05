@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { vimeoPlayerUrl } from "../../domain/vimeo";
 
 type VimeoFrameProps = {
@@ -9,20 +9,15 @@ type VimeoFrameProps = {
   /** Shown in place of the player when Vimeo refuses. The caller decides the wording and any
    *  next step, such as a WhatsApp link. */
   fallback: ReactNode;
-  /** The caller knows Vimeo refused (a domain-lock error from the API, say). */
+  /** The caller knows Vimeo refused (a domain-lock error from the API, say). Browsers fire no
+   *  error event for a failed iframe, so this is the only way the fallback shows for a valid ID. */
   unavailable?: boolean;
 };
 
 /** A 16:9 frame on `surface-dark-alt` holding the Vimeo player, or the fallback message. */
-export function VimeoFrame({ videoId, ...rest }: VimeoFrameProps) {
-  // Keyed by ID so an error on one video never hides the next.
-  return <Frame key={videoId} videoId={videoId} {...rest} />;
-}
-
-function Frame({ videoId, title, fallback, unavailable = false }: VimeoFrameProps) {
-  const [failed, setFailed] = useState(false);
+export function VimeoFrame({ videoId, title, fallback, unavailable = false }: VimeoFrameProps) {
   const src = vimeoPlayerUrl(videoId);
-  const showFallback = unavailable || failed || src === null;
+  const showFallback = unavailable || src === null;
 
   return (
     <div className="relative aspect-video w-full overflow-hidden bg-surface-dark-alt">
@@ -43,7 +38,6 @@ function Frame({ videoId, title, fallback, unavailable = false }: VimeoFrameProp
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
           loading="lazy"
-          onError={() => setFailed(true)}
         />
       )}
     </div>
