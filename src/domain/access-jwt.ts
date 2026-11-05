@@ -18,7 +18,18 @@ export function base64UrlDecode(input: string): Uint8Array {
   }
   const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
   const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  // atob ignores unused low bits in the last character, so two spellings decode to the same
+  // bytes. Accept only the canonical one: re-encode and compare.
+  if (base64UrlEncode(bytes) !== input) throw new Error("non-canonical base64url");
+  return bytes;
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function decodeJsonObject(part: string): Record<string, unknown> {

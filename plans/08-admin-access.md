@@ -48,6 +48,8 @@ Also normal tests in `tests/unit/access-jwt.test.ts` and `tests/unit/admin-acces
 
 ### Out of scope
 
+Next (slice 09): state-changing admin routes (POST, PUT, PATCH, DELETE) must block CSRF, because the `CF_Authorization` cookie authenticates cross-site requests. Check `Origin` against the app's host and require a JSON content type.
+
 Admin screens (slice 09; the `/admin` route here only shows the signed-in email). Seeding real staff emails (a command in `docs/deploying.md`, emails stay `FILL`). Per-action role rules beyond the `roles` argument. Revoking sessions (Access does that).
 
 ### How it is checked
@@ -61,7 +63,7 @@ Admin screens (slice 09; the `/admin` route here only shows the signed-in email)
 1. Zero Trust, Access, Applications, add a self-hosted application. Destinations: the learn host with paths `/admin` and `/api/admin` (add both, one entry each). Do this for staging and production separately.
 2. Identity provider: Google. Policy: allow the specific staff emails only.
 3. Session duration: one week (launch plan).
-4. Copy the application's **AUD tag** and your team domain (`<team>.cloudflareaccess.com`) into `ACCESS_AUD` and `ACCESS_TEAM_DOMAIN` for that environment in `wrangler.jsonc`, then deploy.
+4. Copy the application's **AUD tag** and your team domain as the bare host, no scheme (e.g. `englishwind.cloudflareaccess.com`), into `ACCESS_AUD` and `ACCESS_TEAM_DOMAIN` for that environment in `wrangler.jsonc`, then deploy.
 5. Seed the staff rows (`docs/deploying.md`, "Staff").
 
 Until step 4 is done admin answers 401 for everyone.

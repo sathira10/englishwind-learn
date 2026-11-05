@@ -29,8 +29,10 @@ export function createKeyProvider(
   now: () => number = Date.now,
 ): KeyProvider {
   const cache = new Map<string, { keys: Map<string, CryptoKey>; fetchedAt: number }>();
+  const inflight = new Map<string, Promise<Map<string, CryptoKey>>>();
+  const lastFailure = new Map<string, number>();
 
-  async function load(teamDomain: string) {
+  async function fetchKeys(teamDomain: string) {
     const jwks = await fetchJwks(teamDomain);
     const keys = new Map<string, CryptoKey>();
     for (const jwk of jwks) {
@@ -50,19 +52,44 @@ export function createKeyProvider(
         // Skip a key we cannot import; the others may still be good.
       }
     }
-    const entry = { keys, fetchedAt: now() };
-    cache.set(teamDomain, entry);
-    return entry;
+    return keys;
+  }
+
+  /** One fetch per team domain at a time; a failure is remembered and rethrown. */
+  function load(teamDomain: string): Promise<Map<string, CryptoKey>> {
+    const running = inflight.get(teamDomain);
+    if (running) return running;
+    const started = (async () => {
+      try {
+        const keys = await fetchKeys(teamDomain);
+        cache.set(teamDomain, { keys, fetchedAt: now() });
+        lastFailure.delete(teamDomain);
+        return keys;
+      } catch (error) {
+        lastFailure.set(teamDomain, now());
+        throw error;
+      } finally {
+        inflight.delete(teamDomain);
+      }
+    })();
+    inflight.set(teamDomain, started);
+    return started;
   }
 
   return {
     async getKey(teamDomain, kid) {
-      let entry = cache.get(teamDomain);
-      if (!entry || now() - entry.fetchedAt > JWKS_TTL_MS) entry = await load(teamDomain);
+      const entry = cache.get(teamDomain);
+      const failedAt = lastFailure.get(teamDomain);
+      const recentlyFailed = failedAt !== undefined && now() - failedAt < JWKS_MIN_REFETCH_MS;
+
+      if (!entry || now() - entry.fetchedAt > JWKS_TTL_MS) {
+        if (recentlyFailed) throw new Error("certs fetch failed recently");
+        return (await load(teamDomain)).get(kid) ?? null;
+      }
       const hit = entry.keys.get(kid);
       if (hit) return hit;
-      if (now() - entry.fetchedAt < JWKS_MIN_REFETCH_MS) return null;
-      return (await load(teamDomain)).keys.get(kid) ?? null;
+      if (recentlyFailed || now() - entry.fetchedAt < JWKS_MIN_REFETCH_MS) return null;
+      return (await load(teamDomain)).get(kid) ?? null;
     },
   };
 }

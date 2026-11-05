@@ -134,6 +134,16 @@ describe("GET /api/admin/me", () => {
     expect((await call(imposter)).status).toBe(401);
   });
 
+  it("answers 401 when only the unused trailing bits of the signature are changed", async () => {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const token = await sign(main);
+    expect((await call(token)).status).toBe(200);
+    // A 256-byte signature ends in a 2-char group whose last 4 bits are unused.
+    const last = token.at(-1) as string;
+    const altered = alphabet[alphabet.indexOf(last) ^ 1];
+    expect((await call(token.slice(0, -1) + altered)).status).toBe(401);
+  });
+
   it("answers 401 for alg none and for HS256", async () => {
     const payload = b64url(
       JSON.stringify({
@@ -229,6 +239,39 @@ describe("key cache", () => {
     expect(calls).toBe(1);
     clock += 11 * 60 * 1000;
     await keys.getKey(TEAM, "kid-main");
+    expect(calls).toBe(2);
+  });
+
+  it("shares one in-flight fetch between concurrent requests", async () => {
+    let calls = 0;
+    const keys = createKeyProvider(
+      async () => {
+        calls++;
+        await new Promise((r) => setTimeout(r, 20));
+        return [main.jwk];
+      },
+      () => NOW_MS,
+    );
+    const results = await Promise.all([1, 2, 3, 4].map(() => keys.getKey(TEAM, "kid-main")));
+    expect(calls).toBe(1);
+    expect(results.every((k) => k !== null)).toBe(true);
+  });
+
+  it("does not hammer the certs endpoint after a failed fetch", async () => {
+    let calls = 0;
+    let clock = NOW_MS;
+    const keys = createKeyProvider(
+      async () => {
+        calls++;
+        throw new Error("offline");
+      },
+      () => clock,
+    );
+    await expect(keys.getKey(TEAM, "kid-main")).rejects.toThrow();
+    await expect(keys.getKey(TEAM, "kid-main")).rejects.toThrow();
+    expect(calls).toBe(1);
+    clock += JWKS_MIN_REFETCH_MS + 1;
+    await expect(keys.getKey(TEAM, "kid-main")).rejects.toThrow();
     expect(calls).toBe(2);
   });
 

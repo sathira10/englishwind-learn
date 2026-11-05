@@ -22,6 +22,12 @@ describe("base64UrlDecode", () => {
   it("decodes unpadded url-safe input", () => {
     expect(new TextDecoder().decode(base64UrlDecode(b64("hello?>")))).toBe("hello?>");
   });
+  it("rejects non-canonical trailing bits and padding", () => {
+    // "Q" and "R" decode to the same byte through atob; only the canonical spelling is allowed.
+    expect(base64UrlDecode("YQ")).toEqual(new Uint8Array([97]));
+    expect(() => base64UrlDecode("YR")).toThrow();
+    expect(() => base64UrlDecode("YQ==")).toThrow();
+  });
   it("rejects characters outside the alphabet and impossible lengths", () => {
     expect(() => base64UrlDecode("ab+/")).toThrow();
     expect(() => base64UrlDecode("a")).toThrow();
