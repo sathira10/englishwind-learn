@@ -90,9 +90,8 @@ Commands say where to run them. `<repo>` is your checkout of englishwind-learn.
 
 8. **Verify.**
    - `curl https://<host>/api/health` returns ok.
-   - Row counts match the step 3 output. For each of `students`, `orders`, `grants`, `resources`,
-     run in `<repo>`:
-     `pnpm wrangler d1 execute DB --remote --env <env> --command "SELECT COUNT(*) FROM grants"`.
+   - Row counts match the step 3 output. Run in `<repo>`:
+     `pnpm wrangler d1 execute DB --remote --env <env> --command "SELECT (SELECT COUNT(*) FROM students) AS students, (SELECT COUNT(*) FROM orders) AS orders, (SELECT COUNT(*) FROM grants) AS grants, (SELECT COUNT(*) FROM resources) AS resources"`.
    - The object count matches `r2_objects` in the manifest:
      `aws s3 ls s3://englishwind-learn-files-restored --recursive --endpoint-url ... | wc -l`
      (same credentials as step 6).
