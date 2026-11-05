@@ -14,6 +14,7 @@ start a slice from its plan file, not from what they remember.
 | [04-course-definition.md](04-course-definition.md) | Active: Blueprint as data, publish command              |
 | [07-order-rules.md](07-order-rules.md)             | Active: pure order rules, step 1 built                  |
 | [08-admin-access.md](08-admin-access.md)           | In review: Access JWT verified, role from `staff_roles` |
+| [13-order-form.md](13-order-form.md)               | Active: order form, order API, orders in D1             |
 | [11-backups.md](11-backups.md)                     | Active: daily backup outside Cloudflare, restore        |
 | [14-app-components.md](14-app-components.md)       | Active: components for the student and admin screens    |
 | [roadmap.md](roadmap.md)                           | Active: the slices to launch, in order                  |
