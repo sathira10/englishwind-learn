@@ -30,6 +30,8 @@ interface OrderListRow {
   buyer_email: string;
   buyer_phone: string;
   student_id: string | null;
+  student_name: string | null;
+  student_email: string | null;
   created_at: number;
   decided_at: number | null;
   decided_by: string | null;
@@ -38,8 +40,10 @@ interface OrderListRow {
 
 const ORDER_SELECT = `SELECT o.id, o.reference, o.status, o.amount_cents, o.offer_id,
   f.label AS offer_label, f.needs_staff_check, o.buyer_name, o.buyer_email, o.buyer_phone,
-  o.student_id, o.created_at, o.decided_at, o.decided_by, o.note
-  FROM orders o JOIN offers f ON f.id = o.offer_id`;
+  o.student_id, s.name AS student_name, s.email AS student_email, o.created_at, o.decided_at,
+  o.decided_by, o.note
+  FROM orders o JOIN offers f ON f.id = o.offer_id
+  LEFT JOIN students s ON s.id = o.student_id`;
 
 function toAdminOrder(r: OrderListRow): AdminOrder {
   return {
@@ -54,6 +58,10 @@ function toAdminOrder(r: OrderListRow): AdminOrder {
     buyerEmail: r.buyer_email,
     buyerPhone: r.buyer_phone,
     studentId: r.student_id,
+    student:
+      r.student_id && r.student_name !== null && r.student_email !== null
+        ? { id: r.student_id, name: r.student_name, email: r.student_email }
+        : null,
     createdAt: r.created_at,
     decidedAt: r.decided_at,
     decidedBy: r.decided_by,

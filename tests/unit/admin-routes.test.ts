@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
-import type { AuditEntry, StudentDetail } from "../../src/shared/admin";
+import type { AdminOrder, AuditEntry, StudentDetail } from "../../src/shared/admin";
 import { createKeyProvider, type Jwk } from "../../src/worker/admin/access";
 import { attachOrder } from "../../src/worker/admin/repo";
 import { createPendingOrder } from "../../src/worker/orders/repo";
@@ -284,6 +284,20 @@ describe("orders", () => {
     });
     const times = orders.map((o) => o.createdAt as number);
     expect(times).toEqual([...times].sort((x, y) => x - y));
+  });
+
+  it("shows the linked student, and none when the order is not linked", async () => {
+    const s = await student("Linked Person", `linked-${NOW_MS}@example.com`);
+    const linked = await pendingOrder("blueprint", email());
+    const plain = await pendingOrder("blueprint", email());
+    await call("POST", `/orders/${linked.id}/attach`, { body: { studentId: s.id } });
+    const { orders } = await json<{ orders: AdminOrder[] }>(await call("GET", "/orders"));
+    expect(orders.find((o) => o.id === linked.id)?.student).toEqual({
+      id: s.id,
+      name: "Linked Person",
+      email: s.email,
+    });
+    expect(orders.find((o) => o.id === plain.id)?.student).toBeNull();
   });
 
   it("rejects an unknown status filter", async () => {

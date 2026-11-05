@@ -36,6 +36,8 @@ export interface AdminOrder {
   buyerEmail: string;
   buyerPhone: string;
   studentId: string | null;
+  /** The account that gets access when the order is approved, if one is linked. */
+  student: { id: string; name: string; email: string } | null;
   createdAt: number;
   decidedAt: number | null;
   decidedBy: string | null;

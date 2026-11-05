@@ -120,6 +120,12 @@ export default function QueuePage() {
                   </dd>
                 </div>
               </dl>
+              {order.student ? (
+                <p className="ew-notice">
+                  Linked to {order.student.name} ({order.student.email}). Access goes to that
+                  account.
+                </p>
+              ) : null}
               {order.needsStaffCheck ? (
                 <p className="ew-notice">
                   Class offer. Check the buyer's class enrolment before you approve.
@@ -150,7 +156,9 @@ export default function QueuePage() {
             <p className="m-0">
               Only approve when {formatLkr(action.order.amountCents)} with the note{" "}
               <strong>{action.order.reference}</strong> is in the bank account.{" "}
-              {action.order.buyerName} gets access straight away.
+              {action.order.student
+                ? `${action.order.student.name} (${action.order.student.email}) gets access straight away, not the buyer.`
+                : `${action.order.buyerName} gets access straight away.`}
             </p>
             {action.order.needsStaffCheck ? (
               <Checkbox
