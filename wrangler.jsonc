@@ -15,6 +15,9 @@
     "run_worker_first": ["/api/*"],
   },
   "observability": { "enabled": true },
+  // Cloudflare Access (plans/08-admin-access.md). Empty means /api/admin answers 401. Vars are
+  // not inherited by env blocks, so each environment sets its own. Not secrets.
+  "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" },
   "d1_databases": [
     {
       "binding": "DB",
@@ -27,6 +30,7 @@
   "env": {
     "staging": {
       "name": "englishwind-learn-staging",
+      "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" }, // FILL (Q3)
       // FILL: route for the staging host.
       "d1_databases": [
         {
@@ -40,6 +44,7 @@
     },
     "production": {
       "name": "englishwind-learn",
+      "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" }, // FILL (Q3)
       // FILL: "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }]
       "d1_databases": [
         {
