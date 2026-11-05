@@ -6,7 +6,7 @@
 // then runs the SQL with `wrangler d1 execute --file`. Nothing runs if any row is bad. Safe to
 // run again: see importStatements.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -40,6 +40,7 @@ const { parseBuyersCsv, planGrants, importStatements } = await import(
   pathToFileURL(join(root, "src/domain/buyer-import.ts")).href
 );
 const { colomboDate } = await import(pathToFileURL(join(root, "src/domain/grants.ts")).href);
+const { maskEmail } = await import(pathToFileURL(join(root, "src/domain/email.ts")).href);
 
 let text;
 try {
@@ -62,7 +63,7 @@ if (errors.length > 0) {
 for (const g of plan.grants) {
   const ended = g.ended ? "  ** ACCESS ALREADY ENDED **" : "";
   console.error(
-    `line ${g.buyer.line}: ${g.buyer.email}  ${colomboDate(g.startsAt)} -> ${colomboDate(g.endsAt)}${ended}`,
+    `line ${g.buyer.line}: ${maskEmail(g.buyer.email)}  ${colomboDate(g.startsAt)} -> ${colomboDate(g.endsAt)}${ended}`,
   );
 }
 const endedCount = plan.grants.filter((g) => g.ended).length;
@@ -76,16 +77,53 @@ if (values["dry-run"]) {
   process.exit(0);
 }
 
-const file = join(mkdtempSync(join(tmpdir(), "buyers-import-")), "import-buyers.sql");
-writeFileSync(file, sql);
+const dir = mkdtempSync(join(tmpdir(), "buyers-import-"));
+const file = join(dir, "import-buyers.sql");
 const target = env === "local" ? ["--local"] : ["--remote", "--env", env];
-console.log(`Importing ${plan.grants.length} buyers into ${env}. SQL: ${file}`);
-const run = spawnSync(
-  "pnpm",
-  ["exec", "wrangler", "d1", "execute", "DB", "--file", file, ...target],
-  {
-    stdio: "inherit",
+const wrangler = (args, stdio) =>
+  spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "DB", ...args, ...target], {
+    stdio,
     cwd: root,
-  },
-);
-process.exit(run.status ?? 1);
+    encoding: "utf8",
+  });
+let status = 1;
+try {
+  writeFileSync(file, sql);
+  console.log(`Importing ${plan.grants.length} buyers into ${env}.`);
+  const run = wrangler(["--file", file], "inherit");
+  if (run.error) console.error(`Could not run wrangler: ${run.error.message}`);
+  status = run.status ?? 1;
+  if (status === 0) {
+    // Report what is in the database now, not what this file planned: a buyer who already had
+    // a grant keeps it.
+    const list = plan.grants.map((g) => `'${g.buyer.email.replaceAll("'", "''")}'`).join(", ");
+    const check = wrangler(
+      [
+        "--json",
+        "--command",
+        `SELECT s.email, g.ends_at, g.created_by FROM students s JOIN grants g ON g.student_id = s.id WHERE s.email IN (${list}) AND g.course_id = '${values.course}' ORDER BY g.starts_at`,
+      ],
+      "pipe",
+    );
+    let rows = [];
+    try {
+      const out = check.stdout ?? "";
+      rows = JSON.parse(out.slice(out.indexOf("[")))[0].results;
+    } catch {
+      console.error("Imported, but could not read the grants back to check them.");
+    }
+    for (const g of plan.grants) {
+      const found = rows.filter((r) => r.email === g.buyer.email);
+      const mine = found.find((r) => r.created_by === "import");
+      const what = mine
+        ? `access ends ${colomboDate(mine.ends_at)}${mine.ends_at === g.endsAt ? "" : " (differs from this file)"}`
+        : found.length > 0
+          ? "skipped, existing grant not changed"
+          : "NO GRANT FOUND";
+      console.log(`line ${g.buyer.line}: ${maskEmail(g.buyer.email)}  ${what}`);
+    }
+  }
+} finally {
+  rmSync(dir, { recursive: true, force: true });
+}
+process.exit(status);

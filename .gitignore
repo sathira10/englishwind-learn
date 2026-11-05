@@ -24,3 +24,7 @@ reports/
 
 # Decrypted backups must never be committed.
 restore/
+
+# Buyer lists hold real people. Only the fake fixtures are committed.
+*.csv
+!tests/fixtures/*.csv

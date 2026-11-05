@@ -104,11 +104,14 @@ pnpm buyers:import ~/buyers.csv --env staging             # or local, production
 ```
 
 Nothing is written if any row is bad: the script lists each problem with its line number
-(duplicate email, bad or missing date, a date in the future). It prints each buyer's start and end
+(duplicate email, bad or missing date, a date in the future). It prints each buyer (masked email and line number) with the planned start and end
 date and warns if one has no access left. Each buyer gets a student row (an existing one is left
 alone) and a grant of 3 years from the purchase date at Colombo midnight, with no order,
 `created_by = 'import'`, and an `audit_log` row with actor `import`. A buyer who already has any
-grant for the course is skipped, so the command is safe to run again, for example after fixing a
+grant for the course is skipped and keeps that grant: fixing a date in the CSV and running again does
+not change a buyer already imported (change it in the admin). After the run the script reads the
+grants back and prints, per buyer, the access end now in the database or "skipped, existing grant
+not changed". It is safe to run again, for example after fixing a
 row. Run migrations and the course seed first. The buyers sign in with the same email address
 (the row is linked on their first verified sign-in); tell them to use it. Check afterwards in the
 admin that each of the 5 shows a grant ending 3 years after their purchase date.
