@@ -35,5 +35,7 @@ waits for approval.
 ## Migrations
 
 `pnpm db:generate` writes a new SQL file from `src/db/schema.ts`. Never edit an applied one.
+The Blueprint course and offers are seeded by a hand-written migration (`0001_seed_blueprint.sql`);
+number later generated migrations after it (plans/01-data-model.md).
 Deploy scripts apply pending migrations before the new code goes live, so every migration must
 work with the code that's already running.
