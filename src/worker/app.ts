@@ -3,6 +3,7 @@ import { createAuth } from "./auth/create-auth";
 import { consumeEmailSend } from "./auth/email-limit";
 import type { AppEnv } from "./auth/require-student";
 import { mailerFromEnv, type Mailer } from "./mail";
+import { admin } from "./routes/admin";
 import { health } from "./routes/health";
 import { me } from "./routes/me";
 
@@ -48,6 +49,7 @@ export function createApp(options: AppOptions = {}) {
   app.on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw));
   app.route("/health", health);
   app.route("/me", me);
+  app.route("/admin", admin);
   app.notFound((c) => c.json({ error: "not_found" }, 404));
   return app;
 }

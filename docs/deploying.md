@@ -39,3 +39,19 @@ The Blueprint course and offers are seeded by a hand-written migration (`0001_se
 number later generated migrations after it (plans/01-data-model.md).
 Deploy scripts apply pending migrations before the new code goes live, so every migration must
 work with the code that's already running.
+
+## Staff
+
+`/api/admin` needs two things: the Access variables (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, set per
+environment in `wrangler.jsonc`; setup in `plans/08-admin-access.md`) and a row in `staff_roles`
+for each person. Emails are lower-case. Roles are `owner` and `admin`. Run once per environment
+after the first migration, replacing the `FILL` emails (never commit real ones):
+
+```sh
+pnpm wrangler d1 execute DB --remote --env staging --command \
+  "INSERT INTO staff_roles (email, role, created_at) VALUES
+   ('FILL-sathira@example.com', 'owner', strftime('%s','now')*1000),
+   ('FILL-amma@example.com', 'owner', strftime('%s','now')*1000)"
+```
+
+Use `--env production` for production. To remove someone: `DELETE FROM staff_roles WHERE email = '...'`.
