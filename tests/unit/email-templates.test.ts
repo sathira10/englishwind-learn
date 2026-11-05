@@ -32,6 +32,15 @@ const all = (c: { subject: string; text: string; html: string }) =>
   `${c.subject}\n${c.text}\n${c.html}`;
 
 describe("orderReceivedEmail", () => {
+  it("asks for no transfer and shows no bank details for a zero-price order", () => {
+    const mail = orderReceivedEmail({ ...received, amountCents: 0 });
+    for (const body of [mail.text, mail.html]) {
+      expect(body).toContain("nothing to pay");
+      expect(body).toContain(received.reference);
+      expect(body).not.toContain(BANK_DETAILS.account);
+    }
+  });
+
   it("E1: carries the reference, amount, bank details and next step", () => {
     const mail = orderReceivedEmail(received);
     expect(mail.subject).toBe("Your EnglishWind order EW-7KQ4XM");
@@ -92,11 +101,10 @@ describe("orderReceivedEmail", () => {
     expect(mail.subject).not.toMatch(/[\r\n]/);
   });
 
-  it("formats an amount with cents and LKR 0", () => {
+  it("formats an amount with cents", () => {
     expect(orderReceivedEmail({ ...received, amountCents: 200_050 }).text).toContain(
       "Amount: LKR 2,000.50",
     );
-    expect(orderReceivedEmail({ ...received, amountCents: 0 }).text).toContain("Amount: LKR 0");
   });
 });
 

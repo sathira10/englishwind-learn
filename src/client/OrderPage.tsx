@@ -140,6 +140,7 @@ function OrderForm({
 }
 
 function Confirmation({ order }: { order: OrderResponse }) {
+  if (order.amountCents === 0) return <FreeConfirmation order={order} />;
   const { bank } = order;
   const rows: [string, string][] = [
     ["Amount", formatLkr(order.amountCents)],
@@ -171,6 +172,31 @@ function Confirmation({ order }: { order: OrderResponse }) {
         <ol className="mt-2 grid gap-2 pl-6 text-body text-fg">
           <li>You make the transfer.</li>
           <li>Amma checks it in the bank account.</li>
+          <li>We email your access to class materials and resources.</li>
+        </ol>
+      </div>
+      <p className="m-0 text-base text-fg-muted">Keep this page or write down your reference.</p>
+    </section>
+  );
+}
+
+/** A zero-price offer (Blueprint included with the full live class): nothing to transfer. */
+function FreeConfirmation({ order }: { order: OrderResponse }) {
+  return (
+    <section className="grid max-w-measure gap-6" aria-labelledby="order-placed">
+      <div>
+        <h1 id="order-placed" className="m-0 font-display text-h2 font-bold text-fg-strong">
+          Order placed
+        </h1>
+        <p className="mt-2 text-body text-fg">
+          {order.label}. There is nothing to pay. Your reference is{" "}
+          <strong className="text-fg-strong">{order.reference}</strong>.
+        </p>
+      </div>
+      <div>
+        <h2 className="m-0 text-h3 font-semibold text-fg-strong">What happens next</h2>
+        <ol className="mt-2 grid gap-2 pl-6 text-body text-fg">
+          <li>Amma checks your class enrolment.</li>
           <li>We email your access to class materials and resources.</li>
         </ol>
       </div>

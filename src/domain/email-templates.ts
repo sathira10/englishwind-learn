@@ -119,6 +119,31 @@ export function orderReceivedEmail(data: OrderReceivedData): EmailContent {
     ["Account name", data.bank.accountName],
   ];
   const lead = `We have your order for ${label}.`;
+  if (data.amountCents === 0) {
+    // Zero-price offer (Blueprint included with the full live class): nothing to transfer.
+    const free =
+      "There is nothing to pay. We will check your class enrolment, then email you. " +
+      "Then you can sign in and start. Your access includes the lessons, class materials and resources.";
+    const text = [
+      greeting(data.name),
+      "",
+      lead,
+      "",
+      `Reference: ${reference}`,
+      "",
+      free,
+      "",
+      SIGN_OFF,
+    ].join("\n");
+    const html = page([
+      paragraph(greeting(data.name)),
+      paragraph(lead),
+      rows([["Reference", reference]]),
+      paragraph(free),
+      paragraph(SIGN_OFF),
+    ]);
+    return { subject: `Your EnglishWind order ${reference}`, text, html };
+  }
   const pay = `Please send ${amount} by bank transfer to this account:`;
   const note = `Put your reference ${reference} in the transfer note, so we can find your payment.`;
   const next =

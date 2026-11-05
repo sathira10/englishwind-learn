@@ -25,6 +25,7 @@ export function validateCourse(input: unknown): ValidationResult {
   const errors: string[] = [];
   const keys = new Set<string>();
   const files = new Set<string>();
+  const ids = new Map<string, string>();
   const prefix = `courses/${course.id}/`;
   for (const lesson of course.modules.flatMap((m) => m.lessons)) {
     if (keys.has(lesson.key)) errors.push(`lesson ${lesson.key}: duplicate key`);
@@ -38,6 +39,13 @@ export function validateCourse(input: unknown): ValidationResult {
       }
       if (files.has(ws.file)) errors.push(`${where}: file ${ws.file} is used twice`);
       files.add(ws.file);
+      // Resource ids come from the file name alone, so two files with the same name in
+      // different folders would share an id and fail to publish.
+      const id = worksheetId(course.id, ws.file);
+      if (ids.has(id) && ids.get(id) !== ws.file) {
+        errors.push(`${where}: file name gives id ${id}, already used by ${ids.get(id)}`);
+      }
+      ids.set(id, ws.file);
     }
   }
   return errors.length > 0 ? { ok: false, errors } : { ok: true, course };

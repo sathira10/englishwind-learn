@@ -154,8 +154,17 @@ export default function QueuePage() {
         {action ? (
           <div className="grid gap-4">
             <p className="m-0">
-              Only approve when {formatLkr(action.order.amountCents)} with the note{" "}
-              <strong>{action.order.reference}</strong> is in the bank account.{" "}
+              {action.order.amountCents === 0 ? (
+                <>
+                  No transfer is due for <strong>{action.order.reference}</strong>. Approve once you
+                  have checked the class enrolment.{" "}
+                </>
+              ) : (
+                <>
+                  Only approve when {formatLkr(action.order.amountCents)} with the note{" "}
+                  <strong>{action.order.reference}</strong> is in the bank account.{" "}
+                </>
+              )}
               {action.order.student
                 ? `${action.order.student.name} (${action.order.student.email}) gets access straight away, not the buyer.`
                 : `${action.order.buyerName} gets access straight away.`}

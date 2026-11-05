@@ -80,6 +80,12 @@ describe("validateCourse", () => {
     }
   });
 
+  it("rejects two files whose names give the same resource id", () => {
+    const c = clone();
+    lessonsOf(c)[1]!.worksheets[0]!.file = "courses/blueprint/extra/lesson-00.pdf";
+    expect(errorsOf(c).join()).toContain("already used by");
+  });
+
   it("rejects the same file used twice and a bad key shape", () => {
     const c = clone();
     lessonsOf(c)[1]!.worksheets[0]!.file = lessonsOf(c)[0]!.worksheets[0]!.file;
