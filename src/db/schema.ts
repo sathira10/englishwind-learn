@@ -19,7 +19,8 @@ export const students = sqliteTable("students", {
   email: text().notNull().unique(), // stored lower-case
   name: text().notNull(),
   phone: text(),
-  // Links to the auth user added in slice 03. No foreign key until that table exists.
+  // The Better Auth user (users.id), set when they first sign in (plans/03-auth.md, ADR 0008).
+  // No foreign key: adding one to an existing table means rebuilding it under live foreign keys.
   userId: text("user_id").unique(),
   createdAt: integer("created_at").notNull(),
 });
@@ -176,3 +177,77 @@ export const auditLog = sqliteTable(
   },
   (t) => [index("audit_log_entity").on(t.entityType, t.entityId), index("audit_log_at").on(t.at)],
 );
+
+// Better Auth tables (plans/03-auth.md). Names and columns follow Better Auth's core schema with
+// `usePlural: true`; the adapter finds a table by its export name here. Better Auth writes Date
+// values, so these use `timestamp_ms` (epoch milliseconds, UTC) like every other `*_at` column.
+export const users = sqliteTable("users", {
+  id: text().primaryKey(),
+  name: text().notNull(),
+  email: text().notNull().unique(), // Better Auth lower-cases it
+  emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+  image: text(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    id: text().primaryKey(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    token: text().notNull().unique(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [index("sessions_user_id").on(t.userId)],
+);
+
+export const accounts = sqliteTable(
+  "accounts",
+  {
+    id: text().primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
+    scope: text(),
+    password: text(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("accounts_user_id").on(t.userId)],
+);
+
+export const verifications = sqliteTable(
+  "verifications",
+  {
+    id: text().primaryKey(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("verifications_identifier").on(t.identifier)],
+);
+
+// Better Auth's rate limiter (storage "database"). `key` is "<ip>|<path>"; `last_request` is
+// epoch milliseconds. The model name is `rateLimit`, so the export is `rateLimits` (plural).
+export const rateLimits = sqliteTable("rate_limits", {
+  id: text().primaryKey(),
+  key: text().notNull().unique(),
+  count: integer().notNull(),
+  lastRequest: integer("last_request").notNull(),
+});

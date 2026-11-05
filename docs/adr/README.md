@@ -12,3 +12,4 @@ never edited after it's accepted; a new one supersedes it and says so.
 | [0005](0005-payment-adapters.md)          | Payment providers are adapters over one order and grant model | Accepted |
 | [0006](0006-protected-reference-tests.md) | Reference tests are out of agents' reach                      | Accepted |
 | [0007](0007-order-form-on-learn-host.md)  | The order form lives on the app's host                        | Accepted |
+| [0008](0008-auth-user-to-student.md)      | The auth user maps to a student by email                      | Accepted |
