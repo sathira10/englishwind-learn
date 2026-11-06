@@ -44,11 +44,18 @@ export default function NewOrderPage() {
     return (
       <div className="grid max-w-measure gap-6">
         <h1 className="m-0 font-display text-h2 font-bold text-fg-strong">Order added</h1>
-        <p className="m-0 text-body text-fg">
-          Tell {created.buyerName} to transfer {formatLkr(created.amountCents)} and write{" "}
-          <strong>{created.reference}</strong> in the transfer note. Approve it from the queue when
-          the money arrives.
-        </p>
+        {created.amountCents === 0 ? (
+          <p className="m-0 text-body text-fg">
+            No transfer is due for <strong>{created.reference}</strong>. Check {created.buyerName}'s
+            class enrolment, then approve it from the queue.
+          </p>
+        ) : (
+          <p className="m-0 text-body text-fg">
+            Tell {created.buyerName} to transfer {formatLkr(created.amountCents)} and write{" "}
+            <strong>{created.reference}</strong> in the transfer note. Approve it from the queue
+            when the money arrives.
+          </p>
+        )}
         <div className="flex flex-wrap gap-4">
           <Link to="/admin" className="ew-btn ew-btn-primary">
             Go to the queue

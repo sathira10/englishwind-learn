@@ -96,7 +96,11 @@ function OrderForm({
       <div>
         <h1 className="m-0 font-display text-h2 font-bold text-fg-strong">{offer.label}</h1>
         <p className="mt-2 text-body font-bold text-fg-strong">{formatLkr(offer.priceCents)}</p>
-        <p className="mt-2 text-body text-fg">Pay by bank transfer. Fill in your details first.</p>
+        <p className="mt-2 text-body text-fg">
+          {offer.priceCents === 0
+            ? "Nothing to pay. Fill in your details and we will check your class enrolment."
+            : "Pay by bank transfer. Fill in your details first."}
+        </p>
       </div>
       <TextField
         label="Full name"
