@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { createAuth } from "./auth/create-auth";
-import { consumeEmailSend } from "./auth/email-limit";
+import { consumeEmailSend, consumeIpSend, sendCodeRequest } from "./auth/email-limit";
 import type { AppEnv } from "./auth/require-student";
 import { mailerFromEnv, type Mailer } from "./mail";
 import { admin } from "./routes/admin";
@@ -43,16 +43,23 @@ export function createApp(options: AppOptions = {}) {
     await next();
   });
 
-  // Per-address cap on code sends, before Better Auth's per-IP limit. The answer is the same
-  // whether or not the address has an account.
+  // Code sends: validate the body, then the per-IP cap, then the per-address cap, then Better
+  // Auth. A request that is malformed or over the IP cap never touches an address's quota, so
+  // one client cannot use up someone else's sends. The answer is the same whether or not the
+  // address has an account.
   app.post("/auth/email-otp/send-verification-otp", async (c) => {
-    const body = (await c.req.raw
-      .clone()
-      .json()
-      .catch(() => null)) as { email?: unknown } | null;
-    if (typeof body?.email === "string" && !(await consumeEmailSend(c.env.DB, body.email))) {
-      return c.json({ message: "Too many requests. Please try again later." }, 429);
+    const parsed = sendCodeRequest.safeParse(
+      await c.req.raw
+        .clone()
+        .json()
+        .catch(() => null),
+    );
+    if (!parsed.success) return c.json({ message: "Invalid request." }, 400);
+    const tooMany = () => c.json({ message: "Too many requests. Please try again later." }, 429);
+    if (!(await consumeIpSend(c.env.DB, c.req.header("cf-connecting-ip") ?? "unknown"))) {
+      return tooMany();
     }
+    if (!(await consumeEmailSend(c.env.DB, parsed.data.email))) return tooMany();
     return c.var.auth.handler(c.req.raw);
   });
   app.on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw));

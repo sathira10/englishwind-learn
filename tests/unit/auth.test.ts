@@ -375,6 +375,43 @@ describe("rate limits", () => {
     expect(statuses[10]).toBe(429);
   });
 
+  it("spends no address quota on a malformed request or from an IP over its cap", async () => {
+    const t = setup();
+    const victim = `victim-${unique()}@example.lk`;
+    const attacker = freshIp();
+    // Bad type: refused before any counter, so these cost the victim nothing.
+    for (let i = 0; i < 6; i++) {
+      const res = await t.call("/api/auth/email-otp/send-verification-otp", {
+        method: "POST",
+        body: JSON.stringify({ email: victim, type: "not-a-type" }),
+        ip: attacker,
+      });
+      expect(res.status).toBe(400);
+    }
+    // Use up the attacker's IP cap on other addresses, then aim at the victim.
+    for (let i = 0; i < 3; i++) await t.sendCode(`other-${unique()}@example.lk`, attacker);
+    for (let i = 0; i < 6; i++) expect((await t.sendCode(victim, attacker)).status).toBe(429);
+    // The victim, from their own IP, still gets a code.
+    expect((await t.sendCode(victim, freshIp())).status).toBe(200);
+    expect(t.sent.filter((s) => s.to === victim)).toHaveLength(1);
+  });
+
+  it("refuses a body without a valid email before any limit", async () => {
+    const t = setup();
+    for (const body of [
+      "{",
+      JSON.stringify({ type: "sign-in" }),
+      JSON.stringify({ email: "x", type: "sign-in" }),
+    ]) {
+      const res = await t.call("/api/auth/email-otp/send-verification-otp", {
+        method: "POST",
+        body,
+      });
+      expect(res.status).toBe(400);
+    }
+    expect(t.sent).toHaveLength(0);
+  });
+
   it("stores the counters in D1", async () => {
     const t = setup();
     await t.sendCode(`stored-${unique()}@example.lk`);
