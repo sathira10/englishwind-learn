@@ -142,6 +142,77 @@ a { color: var(--fg-strong); text-decoration-thickness: 1px; text-underline-offs
 [data-surface="navy"] [data-brand-icon="facebook"] { color: var(--brand-facebook-on-dark); }
 .ew-btn-primary [data-brand-icon], footer [data-brand-icon] { color: inherit; }
 
+/* Interface icons: one stroked set in currentColor (assets/Interface). */
+.ew-icon {
+  width: var(--icon-sm); height: var(--icon-sm); flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.ew-icon-md { width: var(--icon-md); height: var(--icon-md); }
+/* An icon that is the whole control: 24px icon in a tap-min square target. */
+.ew-icon-btn {
+  display: inline-grid; place-items: center; min-width: var(--tap-min); min-height: var(--tap-min);
+  padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: inherit; cursor: pointer;
+  transition: var(--transition-control);
+}
+.ew-icon-btn:hover { background: var(--surface); color: var(--fg-strong); }
+[data-surface="navy"] .ew-icon-btn:hover { background: var(--surface-dark-alt); color: var(--fg-on-dark); }
+/* Busy: spins only when the reader allows motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .ew-icon-busy { animation: ew-spin 900ms linear infinite; }
+}
+@keyframes ew-spin { to { transform: rotate(1turn); } }
+
+/* Select: the text field with a chevron-down drawn over its right edge. */
+.ew-select { position: relative; display: grid; }
+.ew-select > select.ew-field { appearance: none; padding-inline-end: calc(var(--space-4) + var(--icon-sm) + var(--space-2)); cursor: pointer; }
+.ew-select > .ew-icon { position: absolute; inset-inline-end: var(--space-4); inset-block: 0; margin-block: auto; pointer-events: none; color: var(--fg-strong); }
+
+/* Checkbox: a 24px box in a 48px row; the whole row is the target. */
+.ew-checkbox { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-min); cursor: pointer; color: var(--fg-strong); font-size: 1rem; }
+.ew-checkbox > input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.ew-checkbox-box {
+  display: inline-grid; place-items: center; width: var(--icon-md); height: var(--icon-md); flex-shrink: 0; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--bg); color: var(--accent-fg);
+  transition: var(--transition-control);
+}
+.ew-checkbox-box > .ew-icon { visibility: hidden; }
+.ew-checkbox:hover .ew-checkbox-box { border-color: var(--fg-muted); }
+.ew-checkbox > input:checked + .ew-checkbox-box { background: var(--accent); border-color: var(--accent); }
+.ew-checkbox > input:checked + .ew-checkbox-box > .ew-icon { visibility: visible; }
+.ew-checkbox > input:focus-visible + .ew-checkbox-box { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.ew-checkbox > input:disabled + .ew-checkbox-box { opacity: 0.5; }
+
+/* Overlays: no shadow; a 1px line border sets them apart. */
+.ew-dialog {
+  box-sizing: border-box; width: min(var(--dialog-max), calc(100% - 2 * var(--space-4)));
+  max-height: calc(100% - 2 * var(--space-4)); margin: auto; padding: var(--panel-space);
+  border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--bg); color: var(--fg); overflow-y: auto;
+}
+.ew-dialog::backdrop { background: var(--overlay-scrim); }
+@media (min-width: 64rem) { .ew-dialog { padding: var(--panel-space-lg); } }
+.ew-toast {
+  box-sizing: border-box; width: min(100%, var(--toast-max)); display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface-dark); color: var(--fg-on-dark);
+}
+.ew-toast > p { flex: 1; margin: 0; font-size: 1rem; }
+
+/* StatusLabel: the word says it; the treatment and icon say it again. */
+.ew-status {
+  display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding-inline: var(--space-3);
+  box-sizing: border-box; font-size: 1rem; font-weight: 700; line-height: 1.2; white-space: nowrap;
+}
+.ew-status-pending { border: 1px solid var(--fg-strong); background: var(--bg); color: var(--fg-strong); }
+.ew-status-approved { background: var(--accent); color: var(--accent-fg); }
+.ew-status-rejected { background: var(--bg); color: var(--fg-strong); }
+.ew-status-rejected > span { text-decoration: line-through; }
+
+/* LessonCompleteMark: the tick and the word "Complete" on a navy field. */
+.ew-complete {
+  display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding-inline: var(--space-3);
+  box-sizing: border-box; background: var(--surface-dark); color: var(--fg-on-dark); font-size: 1rem; font-weight: 700; line-height: 1.2;
+}
+
 /* Preview scaffolding only */
 .pv { padding: var(--space-6); box-sizing: border-box; }
 .pv-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }

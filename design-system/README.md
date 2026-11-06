@@ -75,14 +75,28 @@ EnglishWind teaches adult learners in Sri Lanka to speak English: a live class w
 
 - Photography is the teacher's own portrait and posters, cropped deliberately. No stock imagery or illustration.
 - There is no logo. The wordmark is "EnglishWind" set in Archivo 700 as type. The `E` mark (`assets/Logos/mark.svg`) only appears in the favicon and app icons, on `surface-dark` with a `highlight` bar.
-- The only icons are the three brand marks, at 20px beside a visible label, and the theme switch's moon and sun (`ThemeIcon`, drawn in the text colour). No icon library, no emoji.
+- Icons come in three kinds, and there are no others:
+  - The three brand marks (`BrandIcon`), at 20px beside a visible label. The WhatsApp mark may also sit in the app's "Message us on WhatsApp" links.
+  - The theme switch's moon and sun (`ThemeIcon`, drawn in the text colour).
+  - One small set of interface icons (`Icon`, `assets/Interface/`): check, close, arrow-left, arrow-right, chevron-right, chevron-down, download, play, busy and sign-out.
+- Interface icons are one set with one stroke weight (2 on a 24-unit grid, round caps and joins), drawn in `currentColor` so they follow the `fg-*` colour around them. They are SVGs kept in this system, not an icon library.
+- Use `icon-sm` (20px) beside a visible label. Use `icon-md` (24px) only when the icon is the whole control: it sits in a target of at least `tap-min` and has an `aria-label`.
+- An icon adds to a label; it never replaces one. Status is never shown by an icon or a colour alone. No emoji.
+
+## Overlays
+
+- Dialogs and toasts are the only things that float. They have no shadow. A 1px `line` border with `radius-control` sets them apart.
+- Dialog width is `dialog-max`, and toast width is `toast-max`. Neither gets wider than the screen minus `space-4` on each side.
+- Behind a modal dialog the page is covered by `overlay-scrim`. It is opaque, never a tint.
 
 ## Avoid
 
-Palette-specific utilities, inline visual values, opacity-tinted colours, gradients, rounded cards, shadows, borders between sections, icon libraries, invented urgency, and facts typed into page templates.
+Palette-specific utilities, inline visual values, opacity-tinted colours, gradients, rounded cards, shadows, borders between sections, icon libraries or icons outside the set above, invented urgency, and facts typed into page templates.
 
 ## Using the components
 
 The site's components are Astro, so this system ships their markup with `components/bundle.css` (the site's shared treatments as plain classes) rather than a script bundle. Each component's README lists its props and the markup it renders; build with those classes on top of `tokens.css`.
+
+Components marked "App only" (ConfirmDialog, Toast, ListRow, EmptyState, StatusLabel, LessonCompleteMark, VimeoFrame, Select, Checkbox, Loading) are built in englishwind-learn in React. They are defined here so the app takes them with `pnpm ds:sync`. `Icon` is shared by both.
 
 Not synced: `DesignSystemShowcase` (the site's dev-only specimen route) and `ConsentSettingsLink` as its own card (it is described under ConsentBanner). The fluid display sizes live in `bundle.css` as `--fluid-*`; `tokens.json` records their largest size. This system is ahead of the site: the dark theme, `highlight`, `nav`, the step scale and the inverted primary on navy are not in the site's code yet.

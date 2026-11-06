@@ -17,3 +17,4 @@ pnpm check        # the gate: lint, types, tests, guards, build
 - What to build next: [plans/roadmap.md](plans/roadmap.md)
 - Decisions: [docs/adr/](docs/adr)
 - Deploying: [docs/deploying.md](docs/deploying.md)
+- Backups and restore: [docs/operations.md](docs/operations.md)

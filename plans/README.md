@@ -5,11 +5,26 @@ start a slice from its plan file, not from what they remember.
 
 ## Files
 
-| File                             | Status                                 |
-| -------------------------------- | -------------------------------------- |
-| [00-scaffold.md](00-scaffold.md) | Done: repo, toolchain, guards, CI      |
-| [roadmap.md](roadmap.md)         | Active: the slices to launch, in order |
-| [TEMPLATE.md](TEMPLATE.md)       | Copy for each new slice                |
+| File                                               | Status                                                  |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| [00-scaffold.md](00-scaffold.md)                   | Done: repo, toolchain, guards, CI                       |
+| [01-data-model.md](01-data-model.md)               | Done: first D1 migration, seed, schema tests            |
+| [02-grant-rules.md](02-grant-rules.md)             | Built: grant rules, properties, mutation                |
+| [03-auth.md](03-auth.md)                           | In review: email code sign-in, Google optional          |
+| [04-course-definition.md](04-course-definition.md) | Active: Blueprint as data, publish command              |
+| [05-lesson-access.md](05-lesson-access.md)         | Built: grant check on lesson and worksheet routes       |
+| [06-student-screens.md](06-student-screens.md)     | Built: sign-in, courses, lesson player, mark complete   |
+| [07-order-rules.md](07-order-rules.md)             | Active: order rules; steps 1 and 2 built                |
+| [08-admin-access.md](08-admin-access.md)           | In review: Access JWT verified, role from `staff_roles` |
+| [09-admin-screens.md](09-admin-screens.md)         | Active: admin API and screens for Amma                  |
+| [13-order-form.md](13-order-form.md)               | Active: order form, order API, orders in D1             |
+| [10-emails.md](10-emails.md)                       | Active: order received and access granted emails        |
+| [11-backups.md](11-backups.md)                     | Active: daily backup outside Cloudflare, restore        |
+| [12-buyer-import.md](12-buyer-import.md)           | Active: import the 5 existing buyers from a CSV         |
+| [14-app-components.md](14-app-components.md)       | Active: components for the student and admin screens    |
+| [roadmap.md](roadmap.md)                           | Active: the slices to launch, in order                  |
+| [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)             | Active: what needs Sathira, with defaults               |
+| [TEMPLATE.md](TEMPLATE.md)                         | Copy for each new slice                                 |
 
 ## How plans are written
 

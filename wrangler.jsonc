@@ -15,6 +15,17 @@
     "run_worker_first": ["/api/*"],
   },
   "observability": { "enabled": true },
+  // Public settings only. BETTER_AUTH_SECRET and the optional GOOGLE_CLIENT_ID and
+  // GOOGLE_CLIENT_SECRET are secrets: .dev.vars locally, `wrangler secret put` elsewhere.
+  // ACCESS_* are Cloudflare Access (plans/08-admin-access.md): empty means /api/admin answers 401.
+  // Vars are not inherited by env blocks, so each environment sets its own.
+  "vars": {
+    "BETTER_AUTH_URL": "http://localhost:5173",
+    "MAIL_DRIVER": "console",
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+  },
+  "secrets": { "required": ["BETTER_AUTH_SECRET"] },
   "d1_databases": [
     {
       "binding": "DB",
@@ -27,29 +38,47 @@
   "env": {
     "staging": {
       "name": "englishwind-learn-staging",
-      // FILL: route for the staging host.
+      // ACCESS_*: Q3.
+      "routes": [{ "pattern": "learn-staging.englishwind.lk", "custom_domain": true }],
+      "vars": {
+        "BETTER_AUTH_URL": "https://learn-staging.englishwind.lk",
+        "MAIL_DRIVER": "cloudflare",
+        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_AUD": "",
+      },
+      "secrets": { "required": ["BETTER_AUTH_SECRET"] },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "englishwind-learn-staging",
-          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "database_id": "294564ea-244c-43e9-9b1d-0c6147b3161b",
           "migrations_dir": "src/db/migrations",
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files-staging" }],
+      "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@englishwind.lk"] }],
     },
     "production": {
       "name": "englishwind-learn",
-      // FILL: "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }]
+      // ACCESS_*: Q3.
+      "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }],
+      "vars": {
+        "BETTER_AUTH_URL": "https://learn.englishwind.lk",
+        "MAIL_DRIVER": "cloudflare",
+        "ACCESS_TEAM_DOMAIN": "",
+        "ACCESS_AUD": "",
+      },
+      "secrets": { "required": ["BETTER_AUTH_SECRET"] },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "englishwind-learn",
-          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "database_id": "23fc793d-7b97-4b8b-a4c9-a25aab17fdba",
           "migrations_dir": "src/db/migrations",
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files" }],
+      "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@englishwind.lk"] }],
     },
   },
 }

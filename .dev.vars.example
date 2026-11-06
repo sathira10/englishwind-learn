@@ -1,2 +1,7 @@
-# Local secrets for `pnpm dev`. Copy to .dev.vars. Nothing here yet; auth and email secrets
-# arrive with their slices. Staging and production secrets are set with `wrangler secret put`.
+# Local secrets for `pnpm dev`. Copy to .dev.vars. Staging and production secrets are set with
+# `wrangler secret put` (never in wrangler.jsonc). Generate a secret: openssl rand -base64 32
+BETTER_AUTH_SECRET=change-me-to-a-random-string-of-32-or-more-characters
+
+# Optional. Google sign-in is enabled only when BOTH are set (plans/OPEN-QUESTIONS.md Q5).
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
