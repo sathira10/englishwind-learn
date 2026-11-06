@@ -10,10 +10,11 @@ import type {
 import { Button } from "./components/Button";
 import { EmptyState } from "./components/EmptyState";
 import { TextField } from "./components/TextField";
+import { WhatsAppLink } from "./components/WhatsAppLink";
+import { WHATSAPP } from "../shared/contact";
 
 // The public order page (plan 13, ADR 0007). No sign-in. The price shown comes from the server.
-// PLACEHOLDER: a WhatsApp help link. The number is not in a data file in this repo yet
-// (plans/OPEN-QUESTIONS.md Q26), so there is no link until it is.
+// Help and the transfer receipt go to the one WhatsApp number (Q26, Q27).
 
 type Load = { state: "loading" } | { state: "missing" } | { state: "ready"; offer: OfferResponse };
 
@@ -101,6 +102,9 @@ function OrderForm({
             ? "Nothing to pay. Fill in your details and we will check your class enrolment."
             : "Pay by bank transfer. Fill in your details first."}
         </p>
+        <p className="mt-2 text-body text-fg">
+          Questions? <WhatsAppLink>Message us on WhatsApp</WhatsAppLink>.
+        </p>
       </div>
       <TextField
         label="Full name"
@@ -175,6 +179,13 @@ function Confirmation({ order }: { order: OrderResponse }) {
         <h2 className="m-0 text-h3 font-semibold text-fg-strong">What happens next</h2>
         <ol className="mt-2 grid gap-2 pl-6 text-body text-fg">
           <li>You make the transfer.</li>
+          <li>
+            You{" "}
+            <WhatsAppLink text={`Transfer receipt for ${order.reference}`}>
+              send us the transfer receipt on WhatsApp
+            </WhatsAppLink>{" "}
+            ({WHATSAPP.display}) with your reference.
+          </li>
           <li>Amma checks it in the bank account.</li>
           <li>We email your access to class materials and resources.</li>
         </ol>

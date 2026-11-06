@@ -5,6 +5,7 @@ import { ButtonLink } from "../components/ButtonLink";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError, postRaw } from "../api";
 import { useToast } from "../components/toast-context";
+import { WhatsAppLink } from "../components/WhatsAppLink";
 
 /**
  * The page's h1. It takes focus when it appears, so after a route change a keyboard or screen
@@ -102,7 +103,7 @@ export function NoAccessScreen({ level = 1 }: { level?: 1 | 2 }) {
         }
       >
         Your access may have ended, or your payment may not be confirmed yet. If you think this is a
-        mistake, message us on WhatsApp.
+        mistake, <WhatsAppLink>message us on WhatsApp</WhatsAppLink>.
       </EmptyState>
     </div>
   );

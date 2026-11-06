@@ -6,6 +6,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ListRow, ListRows } from "../components/ListRow";
 import { useLoad } from "../use-load";
 import { ErrorScreen, Loading, ORDER_PATH, PageHeading, Shell, UnverifiedScreen } from "./Shell";
+import { WhatsAppLink } from "../components/WhatsAppLink";
 
 export function MyCourses() {
   const load = useLoad("courses", () => getJson("/api/courses", myCoursesResponse));
@@ -33,8 +34,8 @@ export function MyCoursesList({ courses }: { courses: readonly MyCourse[] }) {
           headingLevel={2}
           action={<ButtonLink to={ORDER_PATH}>Order the Blueprint course</ButtonLink>}
         >
-          Your course appears here once your payment is confirmed. If you've already paid, message
-          us on WhatsApp.
+          Your course appears here once your payment is confirmed. If you've already paid,{" "}
+          <WhatsAppLink>message us on WhatsApp</WhatsAppLink>.
         </EmptyState>
       </div>
     );

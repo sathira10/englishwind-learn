@@ -9,6 +9,7 @@ import { LessonCompleteMark } from "../components/LessonCompleteMark";
 import { useToast } from "../components/toast-context";
 import { VimeoFrame } from "../components/VimeoFrame";
 import { useLoad } from "../use-load";
+import { WhatsAppLink } from "../components/WhatsAppLink";
 import {
   ErrorScreen,
   Loading,
@@ -116,7 +117,8 @@ function LessonView({ data, base }: { data: LessonResponse; base: string }) {
         title={lesson.title}
         fallback={
           <p className="m-0">
-            This video isn't available yet. Message us on WhatsApp and we'll sort it out.
+            This video isn't available yet. <WhatsAppLink>Message us on WhatsApp</WhatsAppLink> and
+            we'll sort it out.
           </p>
         }
       />
