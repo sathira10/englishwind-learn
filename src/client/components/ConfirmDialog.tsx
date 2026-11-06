@@ -1,6 +1,15 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button } from "./Button";
 
+const FOCUSABLE = [
+  "a[href]",
+  "button:not(:disabled)",
+  "input:not(:disabled):not([type=hidden])",
+  "select:not(:disabled)",
+  "textarea:not(:disabled)",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
@@ -57,11 +66,10 @@ export function ConfirmDialog({
       onKeyDown={(event) => {
         // Wrap Tab inside the dialog so focus never reaches the browser's own controls.
         if (event.key !== "Tab") return;
-        const buttons = [
-          ...event.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled)"),
-        ];
-        const first = buttons[0];
-        const last = buttons[buttons.length - 1];
+        // Every focusable control counts, fields included, in document order.
+        const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
         if (!first || !last) return;
         if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
