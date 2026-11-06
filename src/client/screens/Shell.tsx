@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router";
 import { Button } from "../components/Button";
 import { ButtonLink } from "../components/ButtonLink";
 import { EmptyState } from "../components/EmptyState";
-import { postRaw } from "../api";
+import { ApiError, postRaw } from "../api";
+import { useToast } from "../components/toast-context";
 
 /**
  * The page's h1. It takes focus when it appears, so after a route change a keyboard or screen
@@ -26,15 +27,25 @@ export function PageHeading({ children }: { children: ReactNode }) {
 /** The page frame: a slim header and a centred column. Mobile first; text never under 16px. */
 export function Shell({ children, signedIn = true }: { children: ReactNode; signedIn?: boolean }) {
   const navigate = useNavigate();
+  const toast = useToast();
   const [leaving, setLeaving] = useState(false);
 
+  // Leave only once the server has ended the session (or says there was none), so a failed
+  // request never looks like a sign-out while the session stays live on this device.
   async function signOut() {
     setLeaving(true);
     try {
       await postRaw("/api/auth/sign-out", {});
-    } finally {
-      navigate("/sign-in", { replace: true });
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) {
+        setLeaving(false);
+        toast.show("We could not sign you out. Check your connection and try again.", {
+          durationMs: 8000,
+        });
+        return;
+      }
     }
+    navigate("/sign-in", { replace: true });
   }
 
   return (
