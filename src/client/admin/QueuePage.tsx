@@ -42,12 +42,15 @@ export default function QueuePage() {
     const res =
       kind === "approve"
         ? await adminApi("POST", `/orders/${order.id}/approve`, {
+            studentId: order.studentId,
             ...(order.needsStaffCheck ? { staffChecked: checked } : {}),
           })
         : await adminApi("POST", `/orders/${order.id}/reject`, reason.trim() ? { reason } : {});
     setBusy(false);
     if (!res.ok) {
       setProblem(errorMessage(res.error));
+      // The list behind the dialog is stale; refresh it so closing shows the new recipient.
+      if (res.error.error === "recipient_changed") reload();
       return;
     }
     setAction(null);

@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { AdminOrder, AuditEntry, StudentDetail } from "../../src/shared/admin";
 import { createKeyProvider, type Jwk } from "../../src/worker/admin/access";
 import { attachOrder } from "../../src/worker/admin/repo";
+import { approveOrder } from "../../src/worker/orders/repo";
 import { createPendingOrder } from "../../src/worker/orders/repo";
 import { createAdmin } from "../../src/worker/routes/admin";
 import type { Mailer } from "../../src/worker/mail";
@@ -165,7 +166,7 @@ const ROUTES: [string, string, unknown?][] = [
     "/orders",
     { offer: "blueprint", name: "A", email: "a@example.com", phone: "0771234567" },
   ],
-  ["POST", "/orders/x/approve", {}],
+  ["POST", "/orders/x/approve", { studentId: null }],
   ["POST", "/orders/x/reject", {}],
   ["POST", "/orders/x/attach", { studentId: "y" }],
   ["GET", "/students?q=nim"],
@@ -255,7 +256,7 @@ describe("CSRF guard on state-changing routes (R2)", () => {
   it("refuses a state change that would otherwise work", async () => {
     const order = await pendingOrder();
     const res = await call("POST", `/orders/${order.id}/approve`, {
-      body: {},
+      body: { studentId: null },
       headers: { origin: "https://evil.example" },
     });
     expect(res.status).toBe(403);
@@ -312,12 +313,12 @@ describe("orders", () => {
 
   it("approve creates exactly one grant and one audit row, and a second approve adds nothing (R3)", async () => {
     const order = await pendingOrder();
-    const first = await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    const first = await call("POST", `/orders/${order.id}/approve`, { body: { studentId: null } });
     expect(first.status).toBe(200);
     const firstBody = await json<{ granted: boolean; order: { status: string } }>(first);
     expect(firstBody).toMatchObject({ granted: true, order: { status: "approved" } });
 
-    const second = await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    const second = await call("POST", `/orders/${order.id}/approve`, { body: { studentId: null } });
     expect(second.status).toBe(200);
     expect((await json<{ granted: boolean }>(second)).granted).toBe(false);
 
@@ -339,12 +340,18 @@ describe("orders", () => {
     const withMail = app(mailer);
     const buyer = email();
     const order = await pendingOrder("blueprint", buyer);
-    const first = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: withMail });
+    const first = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+      app: withMail,
+    });
     expect(first.status).toBe(200);
     expect(mailer.accessGranted_).toHaveLength(1);
     expect(mailer.accessGranted_[0]!.to).toBe(buyer);
 
-    const second = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: withMail });
+    const second = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+      app: withMail,
+    });
     expect(second.status).toBe(200);
     expect(mailer.accessGranted_).toHaveLength(1);
   });
@@ -352,22 +359,26 @@ describe("orders", () => {
   it("still approves when the mailer throws", async () => {
     const mailer = captureMailer({ failWith: new Error("smtp down") });
     const order = await pendingOrder();
-    const res = await call("POST", `/orders/${order.id}/approve`, { body: {}, app: app(mailer) });
+    const res = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+      app: app(mailer),
+    });
     expect(res.status).toBe(200);
     expect(await json(res)).toMatchObject({ granted: true, order: { status: "approved" } });
     expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(1);
   });
 
-  it("approves with no body at all", async () => {
+  it("refuses an approval that does not say which account the dialog showed", async () => {
     const order = await pendingOrder();
-    const res = await call("POST", `/orders/${order.id}/approve`);
-    expect(res.status).toBe(200);
+    expect((await call("POST", `/orders/${order.id}/approve`)).status).toBe(422);
+    expect((await call("POST", `/orders/${order.id}/approve`, { body: {} })).status).toBe(422);
+    expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(0);
   });
 
   it("makes the buyer a student with a current grant", async () => {
     const buyer = email();
     const order = await pendingOrder("blueprint", buyer);
-    await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    await call("POST", `/orders/${order.id}/approve`, { body: { studentId: null } });
     const row = await DB.prepare(
       `SELECT g.ends_at FROM grants g JOIN students s ON s.id = g.student_id WHERE s.email = ?`,
     )
@@ -378,21 +389,25 @@ describe("orders", () => {
 
   it("needs the explicit staffChecked field for a class offer (R4)", async () => {
     const order = await pendingOrder("blueprint-class-monthly");
-    const refused = await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    const refused = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+    });
     expect(refused.status).toBe(409);
     expect(await json(refused)).toEqual({ error: "staff_check_required" });
 
     // Look-alike values do not count.
     for (const staffChecked of ["true", 1, "yes"]) {
-      const res = await call("POST", `/orders/${order.id}/approve`, { body: { staffChecked } });
+      const res = await call("POST", `/orders/${order.id}/approve`, {
+        body: { staffChecked, studentId: null },
+      });
       expect(res.status).toBe(422);
     }
     const unknownKey = await call("POST", `/orders/${order.id}/approve`, {
-      body: { staff_checked: true, checked: true },
+      body: { staff_checked: true, checked: true, studentId: null },
     });
     expect(unknownKey.status).toBe(422);
     const falseFlag = await call("POST", `/orders/${order.id}/approve`, {
-      body: { staffChecked: false },
+      body: { staffChecked: false, studentId: null },
     });
     expect(falseFlag.status).toBe(409);
     expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(0);
@@ -402,7 +417,9 @@ describe("orders", () => {
         .first<{ status: string }>())!.status,
     ).toBe("pending");
 
-    const ok = await call("POST", `/orders/${order.id}/approve`, { body: { staffChecked: true } });
+    const ok = await call("POST", `/orders/${order.id}/approve`, {
+      body: { staffChecked: true, studentId: null },
+    });
     expect(ok.status).toBe(200);
     expect(await auditCount("order.approve", order.id)).toBe(1);
     const data = await DB.prepare(
@@ -414,7 +431,9 @@ describe("orders", () => {
   });
 
   it("answers 404 for an unknown order", async () => {
-    expect((await call("POST", "/orders/nope/approve", { body: {} })).status).toBe(404);
+    expect((await call("POST", "/orders/nope/approve", { body: { studentId: null } })).status).toBe(
+      404,
+    );
     expect((await call("POST", "/orders/nope/reject", { body: {} })).status).toBe(404);
   });
 
@@ -430,7 +449,9 @@ describe("orders", () => {
     await call("POST", `/orders/${order.id}/reject`, { body: {} });
     expect(await auditCount("order.reject", order.id)).toBe(1);
 
-    const approve = await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    const approve = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+    });
     expect(approve.status).toBe(409);
     expect(await json(approve)).toEqual({ error: "rejected" });
     expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(0);
@@ -440,7 +461,7 @@ describe("orders", () => {
     const a = await pendingOrder();
     expect((await call("POST", `/orders/${a.id}/reject`)).status).toBe(200);
     const b = await pendingOrder();
-    await call("POST", `/orders/${b.id}/approve`, { body: {} });
+    await call("POST", `/orders/${b.id}/approve`, { body: { studentId: null } });
     const res = await call("POST", `/orders/${b.id}/reject`, { body: {} });
     expect(res.status).toBe(409);
     expect(await json(res)).toEqual({ error: "already_approved" });
@@ -505,12 +526,65 @@ describe("orders", () => {
     expect(attach.status).toBe(200);
     expect(await auditCount("order.attach", order.id)).toBe(1);
 
-    await call("POST", `/orders/${order.id}/approve`, { body: {} });
+    await call("POST", `/orders/${order.id}/approve`, { body: { studentId: s.id } });
     const grant = await DB.prepare("SELECT student_id FROM grants WHERE order_id = ?")
       .bind(order.id)
       .first<{ student_id: string }>();
     expect(grant!.student_id).toBe(s.id);
     expect(await count("SELECT count(*) AS n FROM students WHERE email = ?", buyerEmail)).toBe(0);
+  });
+
+  it("refuses to approve when the order was relinked after staff opened it", async () => {
+    const first = await student();
+    const second = await student();
+    const order = await pendingOrder("blueprint", email());
+    await call("POST", `/orders/${order.id}/attach`, { body: { studentId: first.id } });
+    // The dialog showed `first`; another staff member then links the order to `second`.
+    await call("POST", `/orders/${order.id}/attach`, { body: { studentId: second.id } });
+    const stale = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: first.id },
+    });
+    expect(stale.status).toBe(409);
+    expect(await json(stale)).toEqual({ error: "recipient_changed" });
+    // A dialog that showed no linked account is stale too.
+    const unlinked = await call("POST", `/orders/${order.id}/approve`, {
+      body: { studentId: null },
+    });
+    expect(await json(unlinked)).toEqual({ error: "recipient_changed" });
+    expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(0);
+    expect(await auditCount("order.approve", order.id)).toBe(0);
+  });
+
+  it("writes nothing when the order is relinked between the read and the approval batch", async () => {
+    const first = await student();
+    const second = await student();
+    const order = await pendingOrder("blueprint", email());
+    await call("POST", `/orders/${order.id}/attach`, { body: { studentId: first.id } });
+    const racing = new Proxy(DB, {
+      get(target, prop) {
+        if (prop === "batch") {
+          return async (statements: D1PreparedStatement[]) => {
+            await DB.prepare("UPDATE orders SET student_id = ? WHERE id = ?")
+              .bind(second.id, order.id)
+              .run();
+            return target.batch(statements);
+          };
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const result = await approveOrder(
+      racing,
+      order.id,
+      { email: "amma@example.com" },
+      {
+        expectedStudentId: first.id,
+      },
+    );
+    expect(result).toEqual({ ok: false, error: "recipient_changed" });
+    expect(await count("SELECT count(*) AS n FROM grants WHERE order_id = ?", order.id)).toBe(0);
+    expect(await auditCount("order.approve", order.id)).toBe(0);
   });
 
   it("answers conflict, with no audit row, when the order is decided during the attach", async () => {
@@ -539,7 +613,7 @@ describe("orders", () => {
   it("refuses to attach an approved order, an unknown order or an unknown student", async () => {
     const s = await student();
     const approved = await pendingOrder();
-    await call("POST", `/orders/${approved.id}/approve`, { body: {} });
+    await call("POST", `/orders/${approved.id}/approve`, { body: { studentId: null } });
     const res = await call("POST", `/orders/${approved.id}/attach`, { body: { studentId: s.id } });
     expect(res.status).toBe(409);
     expect(await auditCount("order.attach", approved.id)).toBe(0);

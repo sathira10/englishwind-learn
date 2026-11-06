@@ -116,6 +116,7 @@ export function createAdmin(options?: AdminOptions) {
         const result = await approveOrder(c.env.DB, c.req.param("id"), c.get("staff"), {
           // Only the literal true counts; the flag is never inferred from anything else.
           staffChecked: body.data.staffChecked === true,
+          expectedStudentId: body.data.studentId,
         });
         if (!result.ok) {
           return c.json(error(result.error), result.error === "not_found" ? 404 : 409);

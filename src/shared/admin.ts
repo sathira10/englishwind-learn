@@ -5,7 +5,11 @@ import { orderRequest } from "./orders";
 // Plan 09 (admin API). Request bodies are strict: an unknown key is a 422, so a flag such as
 // `staffChecked` only ever counts when it is sent by name.
 
-export const approveRequest = z.strictObject({ staffChecked: z.boolean().optional() });
+export const approveRequest = z.strictObject({
+  staffChecked: z.boolean().optional(),
+  /** The recipient the dialog showed: the linked student's id, or null for the buyer's email. */
+  studentId: z.string().trim().min(1).max(100).nullable(),
+});
 export const rejectRequest = z.strictObject({ reason: z.string().trim().max(500).optional() });
 export const manualOrderRequest = orderRequest;
 export const attachRequest = z.strictObject({ studentId: z.string().trim().min(1).max(100) });

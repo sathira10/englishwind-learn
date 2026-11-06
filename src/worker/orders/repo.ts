@@ -186,13 +186,19 @@ export interface ApproveOptions {
    * (Q14) cannot be approved without it.
    */
   staffChecked?: boolean;
+  /**
+   * The account staff saw as the recipient: the order's linked student id, or null when it had
+   * none. When given, the approval writes nothing if the order is linked differently by then.
+   */
+  expectedStudentId?: string | null;
   now?: number;
 }
 
-export type ApproveError = "not_found" | "rejected" | "staff_check_required";
+export type ApproveError = "not_found" | "rejected" | "staff_check_required" | "recipient_changed";
 
 interface ApprovalRow extends OrderRow {
   needs_staff_check: number;
+  student_id: string | null;
   course_id: string;
   access_years: number;
 }
@@ -214,7 +220,7 @@ export async function approveOrder(
   const row = await db
     .prepare(
       `SELECT o.id, o.reference, o.offer_id, o.amount_cents, o.status, o.created_at, o.decided_at,
-              o.decided_by, o.note, f.needs_staff_check, f.course_id, c.access_years
+              o.decided_by, o.note, o.student_id, f.needs_staff_check, f.course_id, c.access_years
        FROM orders o
        JOIN offers f ON f.id = o.offer_id
        JOIN courses c ON c.id = f.course_id
@@ -230,6 +236,9 @@ export async function approveOrder(
 
   const staffChecked = options.staffChecked === true;
   if (row.needs_staff_check === 1 && !staffChecked) return fail("staff_check_required");
+  const expected = options.expectedStudentId;
+  const checkRecipient = expected !== undefined;
+  if (checkRecipient && row.student_id !== expected) return fail("recipient_changed");
 
   const startsAt = grantStartFor(decision.value.order, now);
   const period = newGrant(startsAt, row.access_years);
@@ -249,9 +258,9 @@ export async function approveOrder(
         `UPDATE orders
          SET status = 'approved', decided_at = ?, decided_by = ?,
              student_id = COALESCE(student_id, (SELECT id FROM students WHERE email = lower(buyer_email)))
-         WHERE id = ? AND status = 'pending'`,
+         WHERE id = ? AND status = 'pending' AND (? = 0 OR student_id IS ?)`,
       )
-      .bind(now, staff.email, orderId),
+      .bind(now, staff.email, orderId, checkRecipient ? 1 : 0, expected ?? null),
     db
       .prepare(
         `INSERT INTO grants (id, student_id, course_id, order_id, starts_at, ends_at, created_by, created_at)
@@ -282,6 +291,8 @@ export async function approveOrder(
   const after = await getOrder(db, orderId);
   if (!after) return fail("not_found");
   if (after.status === "rejected") return fail("rejected");
+  // Still pending: the recipient guard stopped the write (relinked between read and batch).
+  if (after.status === "pending") return fail("recipient_changed");
   return ok({ order: after, granted });
 }
 
