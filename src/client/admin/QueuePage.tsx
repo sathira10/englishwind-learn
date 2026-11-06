@@ -48,9 +48,14 @@ export default function QueuePage() {
         : await adminApi("POST", `/orders/${order.id}/reject`, reason.trim() ? { reason } : {});
     setBusy(false);
     if (!res.ok) {
+      if (res.error.error === "recipient_changed") {
+        // The dialog shows a stale recipient: close it and refresh, so staff look again.
+        setAction(null);
+        toast.show(errorMessage(res.error), { durationMs: 8000 });
+        reload();
+        return;
+      }
       setProblem(errorMessage(res.error));
-      // The list behind the dialog is stale; refresh it so closing shows the new recipient.
-      if (res.error.error === "recipient_changed") reload();
       return;
     }
     setAction(null);

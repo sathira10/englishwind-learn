@@ -37,7 +37,7 @@ const MESSAGES: Record<string, string> = {
   staff_check_required: "Tick the box to say you checked the class enrolment.",
   not_pending: "This order has already been decided.",
   recipient_changed:
-    "This order was linked to a different account since you opened it. Close this and check again.",
+    "Not approved: this order was linked to a different account since you opened it. Check it again.",
   student_not_found: "That student is no longer there.",
   already_has_access: "This student already has access to that course. Extend it instead.",
   revoked: "This access was revoked, so it cannot be extended.",
