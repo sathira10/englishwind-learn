@@ -62,19 +62,9 @@
   --container-measure: var(--measure);
 }
 
-/* App-level values. Where an existing token fits, these point at it. Nothing here is a colour
-   except the dialog scrim, which is the surface-dark token with transparency (OPEN-QUESTIONS Q25).
-   Plan 14: these should move into design-system/tokens.json upstream in englishwind-web; do not
-   add them to tokens.css, which is generated. */
-:root {
-  --dialog-max: 28rem;
-  --toast-max: 26rem;
-  --row-min: var(--tap-min);
-  --radius-control: var(--radius-sm);
-  --shadow-overlay: none; /* the design system has no shadows: overlays get a 1px line border */
-  --overlay-scrim: color-mix(in srgb, var(--surface-dark) 60%, transparent);
-}
-
+/* Dialog and toast sizes, row height, control radius and the scrim are design-system tokens
+   (dialog-max, toast-max, row-min, radius-control, overlay-scrim) from tokens.css. Overlays have
+   no shadow: a 1px line border sets them apart. */
 @layer components {
   /* Native dialog, opened with showModal(): the browser traps focus and handles Esc. */
   .app-dialog {
@@ -85,7 +75,6 @@
     padding: var(--panel-space);
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
-    box-shadow: var(--shadow-overlay);
     background: var(--bg);
     color: var(--fg);
     overflow-y: auto;
@@ -116,7 +105,6 @@
     width: min(100%, var(--toast-max));
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
-    box-shadow: var(--shadow-overlay);
   }
 
   .ew-btn[aria-busy="true"] {

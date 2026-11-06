@@ -1,5 +1,7 @@
 # Design brief: icons and app elements (Q25)
 
+**Status, 6 November 2026: landed upstream and synced.** All of it is in `englishwind-web/design-system` (branch `feat/design-system-icons`) and the design-system artifact, and here through `pnpm ds:sync`. It adds `components/Icon` and `assets/Interface/` (ten icons), the Select, Checkbox and Loading components, and the eight app components moved upstream. New tokens: `dialog-max`, `toast-max`, `row-min`, `radius-control`, `overlay-scrim` (opaque, an alias of `surface-dark`), `icon-sm` and `icon-md`. `shadow-overlay` is not a token: the system has no shadows, and the README's Overlays rule says so. The app-level custom properties in `global.css` are gone. Still to do in a follow-up slice: switching the components to the icons, and building Select and Checkbox to the new specs.
+
 6 November 2026. For Sathira, to add upstream in `englishwind-web/design-system`, then bring back
 here with `pnpm ds:sync`. The app is built word-only for now (slice 14). Once this lands, the app
 switches to these icons and elements.

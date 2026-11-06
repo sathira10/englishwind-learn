@@ -7,8 +7,16 @@ import { join, relative } from "node:path";
 
 const SOURCE = process.env.DS_SOURCE ?? "../englishwind-web/design-system";
 const TARGET = "design-system";
-// What this app takes. Photography and icons stay in the site.
-const PATHS = ["tokens.css", "tokens.json", "README.md", "fonts", "components", "assets/Logos"];
+// What this app takes. Photography and the brand icons stay in the site; the interface icons come too.
+const PATHS = [
+  "tokens.css",
+  "tokens.json",
+  "README.md",
+  "fonts",
+  "components",
+  "assets/Logos",
+  "assets/Interface",
+];
 const check = process.argv.includes("--check");
 
 if (!existsSync(SOURCE)) {

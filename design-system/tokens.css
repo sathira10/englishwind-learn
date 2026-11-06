@@ -27,6 +27,7 @@
   --brand-youtube-on-dark: #ff4e45;
   --brand-facebook: #0866ff;
   --brand-facebook-on-dark: #75acff;
+  --overlay-scrim: var(--surface-dark);
 }
 
 [data-theme="dark"] {
@@ -55,6 +56,7 @@
   --brand-youtube-on-dark: #ff4e45;
   --brand-facebook: #75acff;
   --brand-facebook-on-dark: #75acff;
+  --overlay-scrim: var(--surface-dark);
   color-scheme: dark;
 }
 
@@ -85,6 +87,7 @@
     --brand-youtube-on-dark: #ff4e45;
     --brand-facebook: #75acff;
     --brand-facebook-on-dark: #75acff;
+    --overlay-scrim: var(--surface-dark);
     color-scheme: dark;
   }
 }
@@ -107,6 +110,7 @@
   --panel-space: 24px;
   --panel-space-lg: 40px;
   --radius-sm: 2px;
+  --radius-control: 2px;
   --tap-min: 44px;
   --control-min: 48px;
   --container-page: 68rem;
@@ -114,6 +118,11 @@
   --measure: 65ch;
   --heading-measure: 22ch;
   --heading-measure-wide: 24ch;
+  --row-min: 44px;
+  --dialog-max: 28rem;
+  --toast-max: 26rem;
+  --icon-sm: 20px;
+  --icon-md: 24px;
   --duration-fast: 150ms;
   --duration-slow: 200ms;
   --ease: ease;
