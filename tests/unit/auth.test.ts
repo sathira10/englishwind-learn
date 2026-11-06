@@ -434,9 +434,23 @@ describe("mailers", () => {
     expect(lines[0]).not.toContain("kasun.perera");
   });
 
-  it("MAIL_DRIVER=cloudflare throws 'not configured' until Q6 is answered", async () => {
-    const mailer = mailerFromEnv({ MAIL_DRIVER: "cloudflare", BETTER_AUTH_URL: ORIGIN } as never);
-    await expect(mailer.sendLoginCode("a@b.lk", "123456")).rejects.toThrow(/not configured/);
+  it("MAIL_DRIVER=cloudflare needs the EMAIL binding, and sends through it", async () => {
+    expect(() =>
+      mailerFromEnv({ MAIL_DRIVER: "cloudflare", BETTER_AUTH_URL: ORIGIN } as never),
+    ).toThrow(/EMAIL/);
+    const to: string[] = [];
+    const mailer = mailerFromEnv({
+      MAIL_DRIVER: "cloudflare",
+      BETTER_AUTH_URL: ORIGIN,
+      EMAIL: {
+        async send(message: { to: string }) {
+          to.push(message.to);
+          return { messageId: "m" };
+        },
+      },
+    } as never);
+    await mailer.sendLoginCode("a@b.lk", "123456");
+    expect(to).toEqual(["a@b.lk"]);
   });
 
   it("refuses the console driver on a public https host", () => {

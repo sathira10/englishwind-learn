@@ -5,7 +5,8 @@ Each has its own D1 database, R2 bucket, secrets and Access policy.
 
 ## One-time setup
 
-1. Create the resources and put their IDs in `wrangler.jsonc` where it says `FILL`:
+1. Create the resources and put their IDs in `wrangler.jsonc` (done 6 Nov for D1; the R2
+   buckets use the names below):
 
    ```sh
    pnpm wrangler d1 create englishwind-learn-staging
@@ -14,8 +15,8 @@ Each has its own D1 database, R2 bucket, secrets and Access policy.
    pnpm wrangler r2 bucket create englishwind-learn-files
    ```
 
-2. Add the routes (learn.englishwind.lk for production, a staging host for staging) in
-   `wrangler.jsonc`.
+2. Routes: `learn.englishwind.lk` (production) and `learn-staging.englishwind.lk` (staging), set
+   in `wrangler.jsonc`.
 3. In GitHub: add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as secrets, and create a
    `production` environment with Sathira as a required reviewer.
 4. For the nightly backup ([operations.md](operations.md)), add these repository secrets as well:
@@ -25,6 +26,22 @@ Each has its own D1 database, R2 bucket, secrets and Access policy.
    copy of every backup secret in a password manager. `CLOUDFLARE_API_TOKEN` needs the same D1
    permission as deploying (D1 Edit); I could not confirm from wrangler that an export works
    with read-only access, so do not narrow it without testing.
+
+5. Secrets for each Worker (run once per environment; `--env production` for production):
+
+   ```sh
+   openssl rand -base64 32 | pnpm wrangler secret put BETTER_AUTH_SECRET --env staging
+   ```
+
+   A different value per environment. Changing it later signs every student out. The optional
+   Google keys go in the same way: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+6. Email (Q6). The Worker sends through Cloudflare Email Service with the `EMAIL` binding in
+   `wrangler.jsonc`, from `noreply@englishwind.lk` with replies to `hello@englishwind.lk`. In the
+   Cloudflare dashboard, open Email Service for the `englishwind.lk` zone, onboard the domain for
+   sending and add the DNS records it lists (SPF, DKIM, and a DMARC record if the zone has none).
+   Until that is done every send fails: students get no sign-in code. After deploying staging,
+   sign in there with your own address to check a code arrives, and check it is not in spam.
 
 ## Deploy
 

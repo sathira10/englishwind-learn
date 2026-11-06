@@ -244,3 +244,17 @@ export function orderRejectedEmail(data: OrderRejectedData): EmailContent {
   ]);
   return { subject: `About your EnglishWind order ${reference}`, text, html };
 }
+
+/** The sign-in code. The code sits in the subject too, so it shows in the inbox preview. */
+export function loginCodeEmail(code: string): EmailContent {
+  const lead = `Your EnglishWind sign-in code is ${code}.`;
+  const expiry = "It works for 5 minutes. If you did not ask for it, you can ignore this email.";
+  const text = [lead, "", expiry, "", SIGN_OFF].join("\n");
+  const html = page([
+    paragraph("Your EnglishWind sign-in code is:"),
+    `<p style="margin:0 0 16px;font-size:28px;letter-spacing:4px"><strong>${escapeHtml(code)}</strong></p>`,
+    paragraph(expiry),
+    paragraph(SIGN_OFF),
+  ]);
+  return { subject: `${code} is your EnglishWind sign-in code`, text, html };
+}

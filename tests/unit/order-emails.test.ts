@@ -263,15 +263,43 @@ describe("mailers", () => {
     expect(lines[0]).toContain("Your EnglishWind order EW-7KQ4XM");
   });
 
-  it("the Cloudflare stub fails every message the same way until Q6 is answered", async () => {
-    const mailer = createCloudflareMailer();
-    await expect(mailer.sendLoginCode("a@b.lk", "1")).rejects.toThrow(/not configured/);
-    await expect(mailer.orderReceived("a@b.lk", received)).rejects.toThrow(/not configured/);
-    await expect(
-      mailer.accessGranted("a@b.lk", { name: "A", courseTitle: "B", endsAt: 0, signInUrl: "x" }),
-    ).rejects.toThrow(/not configured/);
-    await expect(mailer.orderRejected("a@b.lk", { name: "A", reference: "EW-1" })).rejects.toThrow(
-      /not configured/,
-    );
+  it("the Cloudflare sender renders each message and sends from noreply@ with replies to hello@", async () => {
+    const sent: EmailMessageBuilder[] = [];
+    const mailer = createCloudflareMailer({
+      async send(message) {
+        sent.push(message);
+        return { messageId: "m" };
+      },
+    });
+    await mailer.sendLoginCode("a@b.lk", "123456");
+    await mailer.orderReceived("a@b.lk", received);
+    await mailer.accessGranted("a@b.lk", {
+      name: "A",
+      courseTitle: "Blueprint",
+      endsAt: 0,
+      signInUrl: "https://learn.test/sign-in",
+    });
+    await mailer.orderRejected("a@b.lk", { name: "A", reference: "EW-1" });
+    expect(sent).toHaveLength(4);
+    for (const message of sent) {
+      expect(message).toMatchObject({
+        to: "a@b.lk",
+        from: { name: "EnglishWind", email: "noreply@englishwind.lk" },
+        replyTo: "hello@englishwind.lk",
+      });
+      expect(message).toHaveProperty("text");
+      expect(message).toHaveProperty("html");
+    }
+    expect(sent[0]).toMatchObject({ subject: "123456 is your EnglishWind sign-in code" });
+    expect((sent[0] as { text: string }).text).toContain("123456");
+  });
+
+  it("the Cloudflare sender passes a send failure to the caller", async () => {
+    const mailer = createCloudflareMailer({
+      async send() {
+        throw new Error("domain not onboarded");
+      },
+    });
+    await expect(mailer.sendLoginCode("a@b.lk", "1")).rejects.toThrow(/not onboarded/);
   });
 });

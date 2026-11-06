@@ -56,6 +56,7 @@
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files-staging" }],
+      "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@englishwind.lk"] }],
     },
     "production": {
       "name": "englishwind-learn",
@@ -77,6 +78,7 @@
         },
       ],
       "r2_buckets": [{ "binding": "FILES", "bucket_name": "englishwind-learn-files" }],
+      "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@englishwind.lk"] }],
     },
   },
 }

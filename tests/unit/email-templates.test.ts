@@ -3,6 +3,7 @@ import {
   accessGrantedEmail,
   escapeHtml,
   formatColomboDate,
+  loginCodeEmail,
   oneLine,
   orderReceivedEmail,
   orderRejectedEmail,
@@ -150,11 +151,22 @@ describe("orderRejectedEmail", () => {
   });
 });
 
+describe("loginCodeEmail", () => {
+  it("puts the code in the subject, text and HTML, and says how long it works", () => {
+    const mail = loginCodeEmail("482913");
+    expect(mail.subject).toBe("482913 is your EnglishWind sign-in code");
+    expect(mail.text).toContain("482913");
+    expect(mail.html).toContain("482913");
+    expect(mail.text).toContain("5 minutes");
+  });
+});
+
 describe("every message", () => {
   const mails = [
     orderReceivedEmail(received),
     accessGrantedEmail(granted),
     orderRejectedEmail({ name: "Kasun", reference: "EW-7KQ4XM", reason: "Not seen" }),
+    loginCodeEmail("482913"),
   ];
 
   it("E6: never says books, has no images or scripts, and keeps the text readable", () => {
