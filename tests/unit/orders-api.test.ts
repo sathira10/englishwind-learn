@@ -106,6 +106,10 @@ describe("POST /api/orders", () => {
 
   it("rejects a bad phone, a missing offer and a non-object body", async () => {
     expect((await post(valid({ phone: "abc" }))).status).toBe(422);
+    // Only separators, or too few digits: staff would have no number to call.
+    for (const phone of ["-------", "(  ) - -  ", "+12 34 56"]) {
+      expect((await post(valid({ phone }))).status).toBe(422);
+    }
     expect((await post(valid({ offer: undefined }))).status).toBe(422);
     expect((await post("[]")).status).toBe(422);
   });

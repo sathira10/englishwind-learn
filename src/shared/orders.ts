@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { BankDetails } from "./bank";
 
+const PHONE_MESSAGE = "Add your WhatsApp number, for example +94 77 123 4567.";
+
 // POST /api/orders (plan 13). There is no amount field: the price is read from the offer row on
 // the server, and Zod drops any key not listed here.
 export const orderRequest = z.object({
@@ -10,7 +12,9 @@ export const orderRequest = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+?[0-9 ()-]{7,20}$/, "Add your WhatsApp number, for example +94 77 123 4567."),
+    .regex(/^\+?[0-9 ()-]{7,20}$/, PHONE_MESSAGE)
+    // Spaces and dashes are fine, but staff need a number to call: at least 7 digits.
+    .refine((value) => (value.match(/\d/g)?.length ?? 0) >= 7, PHONE_MESSAGE),
 });
 
 export type OrderRequest = z.infer<typeof orderRequest>;
