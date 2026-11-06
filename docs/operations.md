@@ -83,7 +83,9 @@ Commands say where to run them. `<repo>` is your checkout of englishwind-learn.
 
 7. **Point the Worker at them.** In `<repo>/wrangler.jsonc`, put the new database name and
    `database_id` and the new bucket name in the environment being restored, then run
-   `pnpm deploy:<env>` in `<repo>`. To restore into the existing resources instead (say the
+   `pnpm deploy:<env>` in `<repo>`. Merge that change to `main` the same day: the nightly backup
+   reads the bucket name from `wrangler.jsonc` on `main`, and the `R2_ACCESS_KEY_ID` token must
+   be able to read the new bucket too. To restore into the existing resources instead (say the
    database was emptied), skip step 4, delete the damaged database or bucket contents first, and
    reuse the existing names. Do this only when the damage is understood, and take a fresh manual
    backup before you start.

@@ -49,11 +49,17 @@ jobs:
       - name: Name the backup
         id: name
         run: |
-          case "$TARGET" in
-            staging) bucket=englishwind-learn-files-staging ;;
-            production) bucket=englishwind-learn-files ;;
-            *) echo "unknown environment: $TARGET" >&2; exit 1 ;;
-          esac
+          # The bucket the Worker uses now, read from wrangler.jsonc, so a restore that points the
+          # environment at a new bucket (docs/operations.md) is what gets backed up next.
+          bucket="$(node --input-type=module -e "
+            import { unstable_readConfig } from 'wrangler';
+            const config = unstable_readConfig({ env: process.argv[1] });
+            const files = config.r2_buckets.find((b) => b.binding === 'FILES');
+            if (!files?.bucket_name) throw new Error('no FILES bucket for ' + process.argv[1]);
+            process.stdout.write(files.bucket_name);
+          " "$TARGET")"
+          [ -n "$bucket" ] || { echo "no FILES bucket for $TARGET" >&2; exit 1; }
+          echo "Backing up R2 bucket $bucket"
           echo "bucket=$bucket" >> "$GITHUB_OUTPUT"
           echo "name=englishwind-learn-$TARGET-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
@@ -93,6 +99,7 @@ jobs:
             echo "environment: $TARGET"
             echo "created_utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "commit: $GITHUB_SHA"
+            echo "r2_bucket: $BUCKET"
             echo "d1_tables: $(grep -c '^CREATE TABLE' work/backup/d1.sql)"
             echo "r2_objects: $objects"
           } > work/backup/MANIFEST.txt
@@ -106,6 +113,7 @@ jobs:
           rm -rf work/backup work/backup.tar.gz
         env:
           NAME: ${{ steps.name.outputs.name }}
+          BUCKET: ${{ steps.name.outputs.bucket }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
 
       - uses: actions/upload-artifact@v4
