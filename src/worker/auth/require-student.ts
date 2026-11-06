@@ -28,8 +28,21 @@ export type AppEnv = {
  * when the email's student row belongs to someone else.
  */
 export const requireStudent = createMiddleware<AppEnv>(async (c, next) => {
-  const session = await c.var.auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session) return c.json({ error: "unauthorized" }, 401);
+  // returnHeaders: when Better Auth extends the session (updateAge), it also sends a fresh cookie
+  // with the new expiry. Those Set-Cookie headers go on whatever response this request ends with,
+  // so an active student's browser cookie rolls forward with the session in D1.
+  const { headers: authHeaders, response: session } = await c.var.auth.api.getSession({
+    headers: c.req.raw.headers,
+    returnHeaders: true,
+  });
+  const forwardCookies = () => {
+    for (const cookie of authHeaders.getSetCookie())
+      c.header("set-cookie", cookie, { append: true });
+  };
+  if (!session) {
+    forwardCookies();
+    return c.json({ error: "unauthorized" }, 401);
+  }
   const { id: userId, email, name, emailVerified } = session.user;
 
   let studentId = (await findLinkedStudent(c.env.DB, userId))?.id;
@@ -41,4 +54,5 @@ export const requireStudent = createMiddleware<AppEnv>(async (c, next) => {
   }
   c.set("student", { userId, studentId, email });
   await next();
+  forwardCookies();
 });

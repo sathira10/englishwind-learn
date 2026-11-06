@@ -118,6 +118,29 @@ describe("email code sign-in", () => {
     expect(setCookie).toContain("samesite=lax");
   });
 
+  it("sends a fresh session cookie when an authenticated request extends the session", async () => {
+    const t = setup();
+    const email = `roll-${unique()}@example.lk`;
+    const { cookie } = await t.signInFully(email);
+    // Age the session past updateAge (1 day) so the next request extends it.
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    await env.DB.prepare(
+      `UPDATE sessions SET updated_at = updated_at - ?, expires_at = expires_at - ?
+       WHERE user_id = (SELECT id FROM users WHERE email = ?)`,
+    )
+      .bind(twoDays, twoDays, email)
+      .run();
+    const res = await t.call("/api/me", { cookie });
+    expect(res.status).toBe(200);
+    const fresh = res.headers.getSetCookie().find((c) => c.includes("session_token="));
+    expect(fresh).toBeDefined();
+    expect(fresh).toMatch(/Max-Age=\d+|Expires=/i);
+
+    // A request that does not extend it sends no cookie.
+    const again = await t.call("/api/me", { cookie });
+    expect(again.headers.getSetCookie().some((c) => c.includes("session_token="))).toBe(false);
+  });
+
   it("answers 401 JSON from /api/me with a forged session cookie", async () => {
     const t = setup();
     const res = await t.call("/api/me", { cookie: "__Secure-better-auth.session_token=forged" });
@@ -223,7 +246,9 @@ describe("requireStudent with a given session", () => {
   function appFor(user: { id: string; email: string; name: string; emailVerified: boolean }) {
     const app = new Hono<AppEnv>();
     app.use("*", async (c, next) => {
-      c.set("auth", { api: { getSession: async () => ({ user }) } } as never);
+      c.set("auth", {
+        api: { getSession: async () => ({ headers: new Headers(), response: { user } }) },
+      } as never);
       await next();
     });
     app.get("/x", requireStudent, (c) => c.json(c.var.student));
