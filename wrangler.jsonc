@@ -38,9 +38,10 @@
   "env": {
     "staging": {
       "name": "englishwind-learn-staging",
-      // FILL: route for the staging host, and BETTER_AUTH_URL below to match. ACCESS_*: Q3.
+      // ACCESS_*: Q3.
+      "routes": [{ "pattern": "learn-staging.englishwind.lk", "custom_domain": true }],
       "vars": {
-        "BETTER_AUTH_URL": "https://FILL-staging-host",
+        "BETTER_AUTH_URL": "https://learn-staging.englishwind.lk",
         "MAIL_DRIVER": "cloudflare",
         "ACCESS_TEAM_DOMAIN": "",
         "ACCESS_AUD": "",
@@ -50,7 +51,7 @@
         {
           "binding": "DB",
           "database_name": "englishwind-learn-staging",
-          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "database_id": "294564ea-244c-43e9-9b1d-0c6147b3161b",
           "migrations_dir": "src/db/migrations",
         },
       ],
@@ -58,7 +59,8 @@
     },
     "production": {
       "name": "englishwind-learn",
-      // FILL: "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }]. ACCESS_*: Q3.
+      // ACCESS_*: Q3.
+      "routes": [{ "pattern": "learn.englishwind.lk", "custom_domain": true }],
       "vars": {
         "BETTER_AUTH_URL": "https://learn.englishwind.lk",
         "MAIL_DRIVER": "cloudflare",
@@ -70,7 +72,7 @@
         {
           "binding": "DB",
           "database_name": "englishwind-learn",
-          "database_id": "00000000-0000-0000-0000-000000000000", // FILL
+          "database_id": "23fc793d-7b97-4b8b-a4c9-a25aab17fdba",
           "migrations_dir": "src/db/migrations",
         },
       ],
